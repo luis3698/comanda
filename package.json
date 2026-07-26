@@ -15,7 +15,10 @@
     "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.test.js\"",
     "test:carga": "node tests/carga/carga.mjs",
     "test:todo": "npm test && npm run test:e2e && npm run test:seguridad",
-    "hash": "node scripts/hash.js"
+    "hash": "node scripts/hash.js",
+    "bd:ver": "node scripts/vaciar.js",
+    "bd:vaciar": "node scripts/vaciar.js --si",
+    "bd:reiniciar": "node scripts/vaciar.js --todo --si"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
