@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Comanda · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/comandero.css">
+</head>
+<body class="comandero">
+  <header class="cab-movil">
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-volver" aria-label="Volver al salón">‹</button>
+    <div class="cab-movil__titulo">
+      <span id="titulo-mesa">Mesa —</span>
+      <div class="cab-movil__sub" id="sub-mesa">—</div>
+    </div>
+    <div id="indicador-conexion"></div>
+  </header>
+
+  <!-- Pestañas: agregar platos (vista 12) / resumen (vista 13) -->
+  <div role="tablist" class="zonas-scroll" aria-label="Secciones de la comanda" style="padding:.5rem .75rem 0">
+    <button role="tab" type="button" class="zona-chip zona-chip--activa" id="tab-menu" aria-selected="true">
+      Agregar platos
+    </button>
+    <button role="tab" type="button" class="zona-chip" id="tab-resumen" aria-selected="false">
+      Resumen <span id="conteo-resumen"></span>
+    </button>
+  </div>
+
+  <main class="principal-movil" id="contenido">
+    <!-- ===== Vista 12: toma de pedido ===== -->
+    <section id="panel-menu">
+      <div class="buscador-fijo">
+        <label class="solo-lectores" for="buscar-plato">Buscar plato</label>
+        <input class="campo__control" id="buscar-plato" type="search"
+               placeholder="Buscar plato…" autocomplete="off">
+        <div class="cat-scroll" id="categorias" role="tablist" aria-label="Categorías"></div>
+      </div>
+      <div class="grilla-menu" id="grilla-menu"></div>
+    </section>
+
+    <!-- ===== Vista 13: resumen y tiempos ===== -->
+    <section id="panel-resumen" class="oculto">
+      <div id="lista-resumen"></div>
+      <div class="tarjeta" id="totales" style="margin-top:1rem"></div>
+    </section>
+  </main>
+
+  <!-- Barra inferior contextual -->
+  <div class="barra-carrito oculto" id="barra-carrito">
+    <span class="barra-carrito__conteo" id="carrito-conteo">0 ítems</span>
+    <span class="barra-carrito__total" id="carrito-total">$ 0</span>
+    <button class="btn btn--primario btn--sm" type="button" id="btn-ir-resumen">Ver resumen</button>
+  </div>
+
+  <nav class="nav-inferior" aria-label="Acciones de la comanda">
+    <button class="nav-inferior__item" type="button" id="btn-precuenta">
+      <span class="nav-inferior__icono" aria-hidden="true">🧾</span>
+      Pre-cuenta
+    </button>
+    <button class="nav-inferior__item" type="button" id="btn-enviar" style="color:var(--c-primario)">
+      <span class="nav-inferior__icono" aria-hidden="true">👨‍🍳</span>
+      Enviar a cocina
+    </button>
+  </nav>
+
+  <!-- Bottom sheet de modificadores (FSD 4.2 vista 12) -->
+  <dialog id="hoja-plato" class="hoja" aria-labelledby="hoja-titulo">
+    <div class="hoja__asa" aria-hidden="true"></div>
+    <div class="modal__cabecera">
+      <h2 id="hoja-titulo">—</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-hoja" aria-label="Cerrar">×</button>
+    </div>
+    <div class="hoja__cuerpo">
+      <div id="grupos-modificadores"></div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="notas-plato">Notas para la cocina</label>
+        <textarea class="campo__control" id="notas-plato" rows="2" maxlength="255"
+                  placeholder="Ej.: sin cebolla, alergia al gluten"></textarea>
+      </div>
+    </div>
+    <div class="hoja__pie">
+      <div class="stepper">
+        <button class="stepper__btn" type="button" id="hoja-menos" aria-label="Menos cantidad">−</button>
+        <span class="stepper__valor" id="hoja-cantidad">1</span>
+        <button class="stepper__btn" type="button" id="hoja-mas" aria-label="Más cantidad">+</button>
+      </div>
+      <button class="btn btn--primario crece" type="button" id="btn-agregar" style="flex:1">
+        Agregar
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Modal de tiempo de salida (vista 13) -->
+  <dialog id="modal-tiempo" aria-labelledby="titulo-tiempo">
+    <div class="modal__cabecera">
+      <h2 id="titulo-tiempo">Mover a tiempo de salida</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-tiempo" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo" id="opciones-tiempo"></div>
+  </dialog>
+
+  <script type="module" src="/comandero/js/mesa.js"></script>
+</body>
+</html>

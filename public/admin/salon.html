@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diseñador de salón · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/salon.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 2: Diseñador de Distribución y Mapa de Mesas — /admin/configuracion/salon -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Diseñador de salón</h1>
+        <span class="insignia insignia--neutra" id="conteo-mesas">—</span>
+      </div>
+      <p class="texto-tenue texto-sm">
+        Dibuje aquí la distribución real del local. El comandero y el POS usarán este
+        mismo plano.
+      </p>
+    </div>
+
+    <!-- FSD 4.1 vista 2: "en móvil se muestra en modo solo lectura con aviso" -->
+    <div class="aviso-movil" id="aviso-movil" role="status">
+      <strong>Vista de solo lectura.</strong>
+      El diseñador necesita una pantalla más ancha. Puede consultar el plano, pero
+      para editarlo use una tablet o un computador.
+    </div>
+
+    <!-- Pestañas por zona -->
+    <div class="zonas-barra" role="tablist" aria-label="Zonas del salón">
+      <div class="zonas-barra__lista" id="zonas-pestanas"></div>
+      <button class="btn btn--secundario btn--sm" type="button" id="btn-nueva-zona">
+        + Nueva zona
+      </button>
+    </div>
+
+    <div class="disenador">
+      <!-- Lienzo -->
+      <div class="tarjeta lienzo-panel">
+        <div class="tarjeta__cabecera">
+          <div class="fila">
+            <h2 id="zona-titulo">—</h2>
+            <span class="insignia insignia--alerta oculto" id="marca-sin-guardar">
+              Cambios sin guardar
+            </span>
+            <span id="indicador-conexion"></span>
+          </div>
+          <div class="fila" id="acciones-zona"></div>
+        </div>
+
+        <div class="tarjeta__cuerpo">
+          <!-- Paleta de formas: origen del arrastre -->
+          <div class="paleta" id="paleta" role="group" aria-label="Formas de mesa disponibles">
+            <span class="paleta__titulo">Arrastre una forma al plano:</span>
+            <button class="paleta__item" type="button" draggable="true" data-forma="redonda">
+              <span class="paleta__figura paleta__figura--redonda" aria-hidden="true"></span>
+              Redonda
+            </button>
+            <button class="paleta__item" type="button" draggable="true" data-forma="cuadrada">
+              <span class="paleta__figura paleta__figura--cuadrada" aria-hidden="true"></span>
+              Cuadrada
+            </button>
+            <button class="paleta__item" type="button" draggable="true" data-forma="rectangular">
+              <span class="paleta__figura paleta__figura--rectangular" aria-hidden="true"></span>
+              Rectangular
+            </button>
+            <button class="paleta__item" type="button" draggable="true" data-forma="barra">
+              <span class="paleta__figura paleta__figura--barra" aria-hidden="true"></span>
+              Barra
+            </button>
+          </div>
+          <p class="texto-tenue texto-sm" id="ayuda-paleta">
+            También puede pulsar una forma para añadirla al centro del plano, y mover las
+            mesas con las flechas del teclado o con los botones del panel derecho.
+          </p>
+
+          <!-- El lienzo. Las mesas se posicionan en % para que escale. -->
+          <div class="lienzo" id="lienzo" tabindex="0"
+               role="application"
+               aria-label="Plano de la zona. Use Tab para recorrer las mesas y las flechas para moverlas.">
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de propiedades -->
+      <aside class="tarjeta propiedades" aria-labelledby="titulo-props">
+        <div class="tarjeta__cabecera">
+          <h2 id="titulo-props">Propiedades</h2>
+        </div>
+        <div class="tarjeta__cuerpo" id="cuerpo-props">
+          <div class="vacio">
+            <p class="texto-sm">Seleccione una mesa del plano para ver sus propiedades.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Barra flotante de guardado -->
+    <div class="barra-flotante oculto" id="barra-guardado" role="status" aria-live="polite">
+      <span id="texto-pendientes"></span>
+      <div class="fila">
+        <button class="btn btn--secundario" type="button" id="btn-descartar">Descartar</button>
+        <button class="btn btn--primario" type="button" id="btn-guardar">Guardar distribución</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de zona -->
+  <dialog id="modal-zona" aria-labelledby="titulo-modal-zona">
+    <form id="form-zona" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal-zona">Nueva zona</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-zona" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="z-nombre">
+            Nombre <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <input class="campo__control" id="z-nombre" required aria-describedby="e-z-nombre">
+          <span class="campo__ayuda">Por ejemplo: Terraza, Salón Principal, VIP, Barra.</span>
+          <span class="campo__error" id="e-z-nombre" role="alert"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="z-orden">Orden de aparición</label>
+          <input class="campo__control" id="z-orden" type="number" min="0" max="999" value="0">
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-zona">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/salon.js"></script>
+</body>
+</html>

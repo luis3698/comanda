@@ -1,0 +1,209 @@
+/* =====================================================================
+   Vista 6 — Configurador de modificadores y recetario.
+   FSD 4.1: "pestañas Modificadores y Fichas técnicas. Modificadores: lista de
+   grupos con sus opciones anidadas. Fichas: buscador de plato + tabla editable
+   de insumos con costo total de receta y % de costo sobre precio de venta".
+   ===================================================================== */
+
+.pestanas-principales {
+  display: flex;
+  gap: .25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--c-borde-suave);
+}
+.pestana-principal {
+  min-height: 44px;
+  padding: .6rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-texto-tenue);
+  cursor: pointer;
+}
+.pestana-principal--activa {
+  color: var(--c-primario);
+  border-bottom-color: var(--c-primario);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .pestana-principal:not(.pestana-principal--activa):hover { color: var(--c-texto); }
+}
+
+/* --- Grupos de modificadores --- */
+.grupo {
+  margin-bottom: .75rem;
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.grupo__cabecera {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+}
+.grupo__nombre { font-weight: 650; font-size: 1rem; }
+.grupo__reglas { font-size: .78rem; color: var(--c-texto-tenue); }
+
+.grupo__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: .85rem 1rem;
+}
+.opcion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .6rem;
+  border: 1px solid var(--c-borde);
+  border-radius: 999px;
+  background: var(--c-fondo);
+  font-size: .82rem;
+}
+.opcion-chip--inactiva { opacity: .5; text-decoration: line-through; }
+.opcion-chip__precio { font-weight: 700; color: var(--c-primario-fuerte); }
+
+.grupo__platos {
+  padding: .6rem 1rem;
+  border-top: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+  font-size: .8rem;
+  color: var(--c-texto-suave);
+}
+
+/* --- Filas de opción en el modal --- */
+.opcion-fila {
+  display: grid;
+  grid-template-columns: 1fr 130px auto;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .4rem;
+}
+
+/* --- Selección múltiple de platos --- */
+.platos-seleccion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: .5rem;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-fondo);
+}
+.plato-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .3rem .6rem;
+  border: 1px solid var(--c-borde);
+  border-radius: 999px;
+  background: var(--c-superficie);
+  font-size: .8rem;
+  cursor: pointer;
+  user-select: none;
+}
+.plato-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.plato-chip--activo {
+  background: var(--c-primario);
+  border-color: var(--c-primario);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* --- Ficha técnica --- */
+.ficha__resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+.resumen-tarjeta {
+  padding: .85rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  background: var(--c-superficie);
+  box-shadow: var(--sombra);
+}
+.resumen-tarjeta__etiqueta {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--c-texto-tenue);
+}
+.resumen-tarjeta__valor {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-top: .2rem;
+}
+/* FSD 4.1 vista 6: "alerta visual si el costo supera el 40 % del precio de
+   venta". Se acompaña de texto, no solo de color (6.4). */
+.resumen-tarjeta--alerta {
+  border-color: var(--c-error);
+  border-width: 2px;
+  background: var(--c-error-bg);
+}
+.resumen-tarjeta--alerta .resumen-tarjeta__valor { color: var(--c-error); }
+.resumen-tarjeta--bien .resumen-tarjeta__valor { color: var(--c-exito); }
+
+.barra-costo {
+  height: 6px;
+  margin-top: .4rem;
+  border-radius: 999px;
+  background: var(--c-borde-suave);
+  overflow: hidden;
+  position: relative;
+}
+.barra-costo__relleno { height: 100%; border-radius: 999px; transition: width 160ms ease; }
+/* Marca del umbral del 40 % */
+.barra-costo__umbral {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 40%;
+  width: 2px;
+  background: var(--c-texto);
+  opacity: .5;
+}
+
+.insumo-fila {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px 110px auto;
+  gap: .5rem;
+  align-items: center;
+  padding: .5rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+}
+.insumo-fila:last-child { border-bottom: none; }
+.insumo-fila__costo {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: .88rem;
+}
+.insumo-fila__unidad { color: var(--c-texto-tenue); font-size: .82rem; }
+
+@media (max-width: 900px) {
+  .ficha__resumen { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .opcion-fila { grid-template-columns: 1fr auto; }
+  /* La tabla de insumos pasa a fila apilada (FSD 4.1: "tablas a tarjetas"). */
+  .insumo-fila {
+    grid-template-columns: 1fr auto;
+    gap: .35rem;
+    padding: .75rem .5rem;
+  }
+  .insumo-fila__unidad, .insumo-fila__costo { grid-column: 1 / -1; text-align: left; }
+}

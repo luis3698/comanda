@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Turno de caja · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/caja.css">
+</head>
+<body class="caja">
+  <header class="pos-cab">
+    <span class="pos-cab__marca"><span aria-hidden="true">💳</span> POS</span>
+    <span class="pos-cab__turno" id="estado-turno">—</span>
+    <span class="pos-cab__reloj" id="reloj-pos">--:--</span>
+    <div id="indicador-conexion"></div>
+    <nav class="pos-nav" aria-label="Navegación de caja">
+      <a class="pos-nav__item" id="nav-cuentas" href="/caja/"><span aria-hidden="true">🧾</span> <span>Cuentas</span></a>
+      <a class="pos-nav__item" id="nav-turno" href="/caja/turno.html"><span aria-hidden="true">💰</span> <span>Turno</span></a>
+    </nav>
+    <span class="texto-sm" id="nombre-cajero" style="opacity:.9"></span>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir-pos">Salir</button>
+  </header>
+
+  <!-- Vista 21: Gestión de Flujo de Caja y Turnos -->
+  <main class="pos-main" id="contenido">
+    <!-- Estado A: apertura (sin turno) -->
+    <section id="panel-apertura" class="oculto">
+      <div class="sin-turno">
+        <h1>Abrir turno de caja</h1>
+        <p class="texto-tenue">Indique el efectivo con el que abre la caja. Es obligatorio para poder cobrar.</p>
+        <div class="visor-monto" id="visor-fondo" aria-live="polite">$0.00</div>
+        <div class="teclado-pos" id="teclado-fondo" role="group" aria-label="Teclado numérico">
+          <button class="teclado-pos__tecla" type="button" data-d="1">1</button>
+          <button class="teclado-pos__tecla" type="button" data-d="2">2</button>
+          <button class="teclado-pos__tecla" type="button" data-d="3">3</button>
+          <button class="teclado-pos__tecla" type="button" data-d="4">4</button>
+          <button class="teclado-pos__tecla" type="button" data-d="5">5</button>
+          <button class="teclado-pos__tecla" type="button" data-d="6">6</button>
+          <button class="teclado-pos__tecla" type="button" data-d="7">7</button>
+          <button class="teclado-pos__tecla" type="button" data-d="8">8</button>
+          <button class="teclado-pos__tecla" type="button" data-d="9">9</button>
+          <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="borrar" aria-label="Borrar">⌫</button>
+          <button class="teclado-pos__tecla" type="button" data-d="0">0</button>
+          <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="00">00</button>
+        </div>
+        <button class="btn btn--primario btn--bloque" type="button" id="btn-abrir-turno" style="margin-top:1rem">
+          Abrir turno
+        </button>
+      </div>
+    </section>
+
+    <!-- Estado B: turno activo -->
+    <section id="panel-activo" class="oculto">
+      <div class="principal__cabecera">
+        <h1>Turno activo</h1>
+        <p class="texto-tenue texto-sm" id="info-turno">—</p>
+      </div>
+
+      <div class="ficha__resumen" id="resumen-ventas" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;margin-bottom:1rem"></div>
+
+      <div class="fila" style="gap:.6rem;flex-wrap:wrap;margin-bottom:1rem">
+        <button class="btn btn--secundario" type="button" id="btn-salida">Registrar salida de efectivo</button>
+        <button class="btn btn--peligro" type="button" id="btn-cerrar-turno">Cerrar turno (arqueo)</button>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h2>Movimientos de efectivo</h2></div>
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <thead><tr><th>Tipo</th><th>Cantidad</th><th>Total</th></tr></thead>
+            <tbody id="tabla-movimientos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: salida de efectivo -->
+  <dialog id="modal-salida" aria-labelledby="titulo-salida">
+    <form id="form-salida" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-salida">Salida de efectivo</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-salida" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="s-monto">Monto <span class="campo__requerido">*</span></label>
+          <input class="campo__control" id="s-monto" inputmode="decimal" required aria-describedby="e-s-monto">
+          <span class="campo__error" id="e-s-monto" role="alert"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="s-motivo">Motivo <span class="campo__requerido">*</span></label>
+          <input class="campo__control" id="s-motivo" required aria-describedby="e-s-motivo"
+                 placeholder="Ej.: compra de emergencia">
+          <span class="campo__error" id="e-s-motivo" role="alert"></span>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-salida">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Registrar salida</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: arqueo ciego -->
+  <dialog id="modal-arqueo" aria-labelledby="titulo-arqueo">
+    <div class="modal__cabecera">
+      <h2 id="titulo-arqueo">Arqueo ciego</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-arqueo" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo">
+      <!-- Paso 1: conteo (sin mostrar el esperado) -->
+      <div id="paso-conteo">
+        <p class="texto-tenue texto-sm">
+          Cuente el efectivo físico del cajón e ingrese el total. <strong>El sistema no le
+          muestra el valor esperado</strong>: es un arqueo ciego.
+        </p>
+        <div class="visor-monto" id="visor-conteo" aria-live="polite">$0.00</div>
+        <div class="teclado-pos" id="teclado-conteo" role="group" aria-label="Teclado numérico">
+          <button class="teclado-pos__tecla" type="button" data-d="1">1</button>
+          <button class="teclado-pos__tecla" type="button" data-d="2">2</button>
+          <button class="teclado-pos__tecla" type="button" data-d="3">3</button>
+          <button class="teclado-pos__tecla" type="button" data-d="4">4</button>
+          <button class="teclado-pos__tecla" type="button" data-d="5">5</button>
+          <button class="teclado-pos__tecla" type="button" data-d="6">6</button>
+          <button class="teclado-pos__tecla" type="button" data-d="7">7</button>
+          <button class="teclado-pos__tecla" type="button" data-d="8">8</button>
+          <button class="teclado-pos__tecla" type="button" data-d="9">9</button>
+          <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="borrar" aria-label="Borrar">⌫</button>
+          <button class="teclado-pos__tecla" type="button" data-d="0">0</button>
+          <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="00">00</button>
+        </div>
+        <div class="campo oculto" id="campo-comentario" style="margin-top:.75rem">
+          <label class="campo__etiqueta" for="a-comentario">Comentario justificativo</label>
+          <textarea class="campo__control" id="a-comentario" rows="2"
+                    placeholder="Requerido si el conteo no cuadra"></textarea>
+        </div>
+        <button class="btn btn--primario btn--bloque" type="button" id="btn-confirmar-conteo" style="margin-top:1rem">
+          Confirmar conteo y revelar arqueo
+        </button>
+      </div>
+
+      <!-- Paso 2: resultado (revelado tras confirmar) -->
+      <div id="paso-resultado" class="oculto">
+        <div id="resultado-arqueo"></div>
+      </div>
+    </div>
+    <div class="modal__pie" id="pie-arqueo" style="display:none">
+      <button class="btn btn--primario" type="button" id="btn-finalizar-arqueo">Finalizar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/caja/js/turno.js"></script>
+</body>
+</html>

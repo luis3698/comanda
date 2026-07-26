@@ -1,0 +1,14 @@
+node_modules/
+.env
+*.log
+npm-debug.log*
+public/uploads/*
+!public/uploads/.gitkeep
+.DS_Store
+Thumbs.db
+
+# Scripts temporales de generación del manual (rutas específicas de sesión)
+scripts/_*.mjs
+
+# Configuración/estado local de Claude Code
+.claude/

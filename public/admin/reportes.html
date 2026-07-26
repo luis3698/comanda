@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/reportes.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 10: Centro de Reportes y Exportación — /admin/reportes -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <h1>Reportes</h1>
+      <p class="texto-tenue texto-sm">
+        Los totales se calculan en el servidor. El archivo exportado contiene exactamente
+        los mismos números que ve aquí.
+      </p>
+    </div>
+
+    <div class="reportes">
+      <!-- Panel izquierdo: catálogo de reportes -->
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h2>Reportes</h2></div>
+        <div class="reportes-lista" id="catalogo" role="listbox" aria-label="Reportes disponibles"></div>
+      </div>
+
+      <!-- Área principal: filtros + vista previa -->
+      <div>
+        <div class="tarjeta" style="margin-bottom:1rem">
+          <div class="tarjeta__cuerpo filtros">
+            <div class="campo" style="margin:0">
+              <label class="campo__etiqueta" for="r-desde">Desde <span class="campo__requerido">*</span></label>
+              <input class="campo__control" id="r-desde" type="date">
+            </div>
+            <div class="campo" style="margin:0">
+              <label class="campo__etiqueta" for="r-hasta">Hasta <span class="campo__requerido">*</span></label>
+              <input class="campo__control" id="r-hasta" type="date">
+            </div>
+            <div class="campo" style="margin:0">
+              <label class="campo__etiqueta" for="r-rango">Rango rápido</label>
+              <select class="campo__control" id="r-rango">
+                <option value="hoy">Hoy</option>
+                <option value="ayer">Ayer</option>
+                <option value="semana">Últimos 7 días</option>
+                <option value="mes">Últimos 30 días</option>
+              </select>
+            </div>
+            <div class="fila" style="gap:.4rem;align-items:flex-end">
+              <button class="btn btn--primario" type="button" id="btn-generar">Generar</button>
+            </div>
+          </div>
+          <p class="campo__error" id="error-rango" role="alert" style="padding:0 1rem 1rem"></p>
+        </div>
+
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera">
+            <div>
+              <h2 id="titulo-reporte">Seleccione un reporte</h2>
+              <p class="texto-tenue texto-sm" id="sub-reporte" style="margin:0"></p>
+            </div>
+            <div class="fila" style="gap:.4rem" id="acciones-exportar"></div>
+          </div>
+          <div class="tabla-contenedor" id="vista-previa">
+            <div class="vacio">
+              <p>Elija un reporte del panel izquierdo y pulse «Generar».</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/admin/js/reportes.js"></script>
+</body>
+</html>

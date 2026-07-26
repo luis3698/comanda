@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Cobro · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/caja.css">
+</head>
+<body class="caja">
+  <header class="pos-cab">
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-volver" aria-label="Volver">‹ Cuentas</button>
+    <span class="pos-cab__marca" id="titulo-cobro">Cobro —</span>
+    <span class="pos-cab__turno" id="estado-turno">—</span>
+    <span class="pos-cab__reloj" id="reloj-pos">--:--</span>
+    <div id="indicador-conexion"></div>
+    <span class="crece"></span>
+    <a class="btn btn--secundario btn--sm" href="/caja/dividir.html" id="enlace-dividir">Dividir cuenta</a>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir-pos">Salir</button>
+  </header>
+
+  <!-- Vista 19: Terminal de Cobro y Facturación -->
+  <main class="pos-main" id="contenido">
+    <div class="cobro">
+      <!-- Columna 1: desglose del consumo -->
+      <div class="cobro__col">
+        <div class="cobro__col-cab">Consumo</div>
+        <div class="cobro__col-cuerpo">
+          <div id="lineas-consumo"></div>
+
+          <div class="desglose-sub"><span>Subtotal</span><span id="v-subtotal">—</span></div>
+          <div class="desglose-sub" id="fila-descuento" style="display:none">
+            <span id="etiqueta-descuento">Descuento</span><span id="v-descuento">—</span>
+          </div>
+          <div class="desglose-sub"><span>Impuestos</span><span id="v-impuestos">—</span></div>
+          <div class="desglose-sub" id="fila-propina" style="display:none">
+            <span>Propina</span><span id="v-propina">—</span>
+          </div>
+          <div class="desglose-total"><span>TOTAL</span><span id="v-total">—</span></div>
+        </div>
+      </div>
+
+      <!-- Columna 2: descuento, propina y métodos de pago -->
+      <div class="cobro__col">
+        <div class="cobro__col-cab">Ajustes y pago</div>
+        <div class="cobro__col-cuerpo">
+          <!-- Descuento -->
+          <div class="campo">
+            <label class="campo__etiqueta" for="sel-descuento">Descuento</label>
+            <select class="campo__control" id="sel-descuento">
+              <option value="">Sin descuento</option>
+            </select>
+          </div>
+          <div class="campo oculto" id="campo-monto-descuento">
+            <label class="campo__etiqueta" for="monto-descuento">Monto del descuento</label>
+            <input class="campo__control" id="monto-descuento" inputmode="decimal" placeholder="0.00">
+          </div>
+
+          <!-- Propina -->
+          <div class="campo">
+            <label class="campo__etiqueta">Propina</label>
+            <div class="propina-botones" id="propina-botones">
+              <button class="propina-btn propina-btn--activa" type="button" data-pct="0">0%</button>
+              <button class="propina-btn" type="button" data-pct="5">5%</button>
+              <button class="propina-btn" type="button" data-pct="10">10%</button>
+              <button class="propina-btn" type="button" data-libre="1">Otro</button>
+            </div>
+            <input class="campo__control oculto" id="propina-libre" inputmode="decimal" placeholder="Monto de propina">
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--c-borde-suave);margin:1rem 0">
+
+          <!-- Métodos de pago -->
+          <label class="campo__etiqueta">Agregar pago</label>
+          <div class="metodos-pago" id="metodos-pago">
+            <button class="metodo-btn metodo-btn--activo" type="button" data-metodo="efectivo">💵 Efectivo</button>
+            <button class="metodo-btn" type="button" data-metodo="tarjeta_credito">💳 T. Crédito</button>
+            <button class="metodo-btn" type="button" data-metodo="tarjeta_debito">💳 T. Débito</button>
+            <button class="metodo-btn" type="button" data-metodo="transferencia">📱 Transferencia</button>
+          </div>
+
+          <div class="visor-monto" id="visor-pago" aria-live="polite">$0.00</div>
+          <div class="teclado-pos" id="teclado-pago" role="group" aria-label="Teclado del pago">
+            <button class="teclado-pos__tecla" type="button" data-d="1">1</button>
+            <button class="teclado-pos__tecla" type="button" data-d="2">2</button>
+            <button class="teclado-pos__tecla" type="button" data-d="3">3</button>
+            <button class="teclado-pos__tecla" type="button" data-d="4">4</button>
+            <button class="teclado-pos__tecla" type="button" data-d="5">5</button>
+            <button class="teclado-pos__tecla" type="button" data-d="6">6</button>
+            <button class="teclado-pos__tecla" type="button" data-d="7">7</button>
+            <button class="teclado-pos__tecla" type="button" data-d="8">8</button>
+            <button class="teclado-pos__tecla" type="button" data-d="9">9</button>
+            <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="borrar" aria-label="Borrar">⌫</button>
+            <button class="teclado-pos__tecla" type="button" data-d="0">0</button>
+            <button class="teclado-pos__tecla teclado-pos__tecla--accion" type="button" data-a="00">00</button>
+          </div>
+          <div class="fila" style="gap:.4rem;margin-top:.5rem">
+            <button class="btn btn--secundario btn--sm crece" type="button" id="btn-exacto">Importe exacto</button>
+            <button class="btn btn--primario crece" type="button" id="btn-agregar-pago">Agregar pago</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 3: pagos aplicados y cierre -->
+      <div class="cobro__col cobro__col--pagos">
+        <div class="cobro__col-cab">Pagos aplicados</div>
+        <div class="cobro__col-cuerpo">
+          <div id="pagos-aplicados"></div>
+          <div class="saldo saldo--pendiente" id="saldo" aria-live="polite">Saldo: —</div>
+          <div id="cambio-info"></div>
+          <button class="btn btn--primario btn--bloque" type="button" id="btn-cerrar" disabled style="margin-top:.5rem">
+            Imprimir factura y cerrar mesa
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de factura emitida -->
+  <dialog id="modal-factura" aria-labelledby="titulo-factura">
+    <div class="modal__cabecera">
+      <h2 id="titulo-factura">Factura emitida</h2>
+    </div>
+    <div class="modal__cuerpo" id="cuerpo-factura"></div>
+    <div class="modal__pie">
+      <button class="btn btn--primario" type="button" id="btn-cerrar-factura">Aceptar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/caja/js/cobro.js"></script>
+</body>
+</html>

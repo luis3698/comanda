@@ -1,0 +1,53 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: sigr_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_sigr_dev}
+      MYSQL_DATABASE: ${DB_NAME:-sigr}
+      MYSQL_USER: ${DB_USER:-sigr_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-sigr_app_dev}
+      TZ: ${TZ:-America/Bogota}
+    # Los scripts de db/ se ejecutan en orden alfabetico la primera vez que
+    # se crea el volumen: 01_schema -> 02_permisos -> 03_seed -> 04_privilegios.
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d:ro
+      - sigr_datos:/var/lib/mysql
+    ports:
+      - "${DB_PORT_HOST:-3307}:3306"
+    command: --default-authentication-plugin=caching_sha2_password
+    # Se comprueba por TCP contra 127.0.0.1, no por socket con -h localhost.
+    # Durante la inicializacion MySQL levanta un servidor temporal con
+    # --skip-networking que SI responde al socket: un ping por socket daria
+    # "healthy" antes de que la base este realmente lista, y la API arrancaria
+    # demasiado pronto. El puerto TCP solo abre cuando el servidor definitivo
+    # esta en pie y los scripts de db/ ya corrieron.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_sigr_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  api:
+    build: .
+    container_name: sigr_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-sigr}
+      DB_USER: ${DB_USER:-sigr_app}
+      DB_PASSWORD: ${DB_PASSWORD:-sigr_app_dev}
+      TZ: ${TZ:-America/Bogota}
+    ports:
+      - "${PORT_HOST:-3000}:3000"
+
+volumes:
+  sigr_datos:

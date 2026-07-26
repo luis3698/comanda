@@ -1,0 +1,29 @@
+/* Pantallas de interfaces aún no construidas. Se sustituyen por la vista real
+   en su fase correspondiente. */
+
+.pendiente {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.pendiente__caja { max-width: 460px; }
+.pendiente__icono { font-size: 3rem; display: block; margin-bottom: .5rem; }
+.pendiente__acciones { margin-top: 1.5rem; }
+
+/* El KDS trabaja en modo oscuro de alto contraste: fondo #111 y texto grande,
+   legible a 1-2 m (FSD 4.3). */
+.pendiente--oscuro {
+  background: #111;
+  color: #f8fafc;
+}
+.pendiente--oscuro h1 { color: #fff; }
+.pendiente--oscuro p { font-size: 1.05rem; color: #cbd5e1; }
+.pendiente--oscuro .btn--secundario {
+  color: #f8fafc;
+  border-color: #475569;
+  background: transparent;
+}

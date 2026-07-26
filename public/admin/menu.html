@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menú y precios · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 5: Editor de Menú, Precios y Categorías — /admin/catalogo/menu -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Menú y precios</h1>
+        <span class="insignia insignia--neutra" id="conteo-productos">—</span>
+      </div>
+      <p class="texto-tenue texto-sm">
+        El menú que verán los meseros en el comandero. Cada categoría se enruta a
+        cocina o a barra según su destino de preparación.
+      </p>
+    </div>
+
+    <div class="herramientas">
+      <div class="buscador">
+        <span class="buscador__icono" aria-hidden="true">🔍</span>
+        <label class="solo-lectores" for="buscar">Buscar plato</label>
+        <input class="campo__control" id="buscar" type="search"
+               placeholder="Buscar plato…" autocomplete="off">
+      </div>
+      <label class="fila texto-sm" style="gap:.4rem">
+        <input type="checkbox" id="ver-inactivos">
+        Mostrar dados de baja
+      </label>
+      <div class="crece"></div>
+      <button class="btn btn--primario" type="button" id="btn-nuevo-plato">+ Nuevo plato</button>
+    </div>
+
+    <div class="menu-editor">
+      <!-- Panel izquierdo: árbol de categorías -->
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera">
+          <h2>Categorías</h2>
+          <button class="btn btn--secundario btn--sm" type="button" id="btn-nueva-categoria">+</button>
+        </div>
+        <!-- En móvil el árbol se convierte en un desplegable (FSD 4.1 vista 5) -->
+        <div class="categorias-movil">
+          <label class="solo-lectores" for="select-categoria">Categoría</label>
+          <select class="campo__control" id="select-categoria"></select>
+        </div>
+        <div class="categorias-lista" id="categorias-lista" role="list"></div>
+      </div>
+
+      <!-- Panel derecho: grilla de platos -->
+      <div>
+        <div class="grilla-platos" id="grilla-platos"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de plato con pestañas (FSD 4.1 vista 5) -->
+  <dialog id="modal-plato" aria-labelledby="titulo-modal-plato">
+    <form id="form-plato" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal-plato">Nuevo plato</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-plato" aria-label="Cerrar">×</button>
+      </div>
+
+      <div role="tablist" class="pestanas-modal" aria-label="Secciones del plato">
+        <button role="tab" type="button" class="pestana-modal pestana-modal--activa"
+                id="tab-generales" aria-controls="panel-generales" aria-selected="true">
+          Datos generales
+        </button>
+        <button role="tab" type="button" class="pestana-modal"
+                id="tab-precios" aria-controls="panel-precios" aria-selected="false">
+          Precios y variantes
+        </button>
+        <button role="tab" type="button" class="pestana-modal"
+                id="tab-impuestos" aria-controls="panel-impuestos" aria-selected="false">
+          Impuestos
+        </button>
+      </div>
+
+      <div class="modal__cuerpo">
+        <!-- Pestaña: datos generales -->
+        <div id="panel-generales" role="tabpanel" aria-labelledby="tab-generales">
+          <div class="form-dos-columnas">
+            <div class="campo campo--ancho">
+              <label class="campo__etiqueta" for="p-nombre">
+                Nombre <span class="campo__requerido" aria-hidden="true">*</span>
+              </label>
+              <input class="campo__control" id="p-nombre" required aria-describedby="e-p-nombre">
+              <span class="campo__error" id="e-p-nombre" role="alert"></span>
+            </div>
+
+            <div class="campo campo--ancho">
+              <label class="campo__etiqueta" for="p-descripcion">Descripción</label>
+              <textarea class="campo__control" id="p-descripcion" rows="2"
+                        placeholder="Cómo se describe el plato en la carta"></textarea>
+            </div>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="p-categoria">
+                Categoría <span class="campo__requerido" aria-hidden="true">*</span>
+              </label>
+              <select class="campo__control" id="p-categoria" required aria-describedby="e-p-categoria"></select>
+              <span class="campo__ayuda" id="ayuda-destino"></span>
+              <span class="campo__error" id="e-p-categoria" role="alert"></span>
+            </div>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="p-imagen">Imagen</label>
+              <input class="campo__control" id="p-imagen" type="file"
+                     accept="image/jpeg,image/png,image/webp" aria-describedby="ayuda-imagen e-p-imagen">
+              <span class="campo__ayuda" id="ayuda-imagen">JPG, PNG o WebP. Máximo 2 MB.</span>
+              <span class="campo__error" id="e-p-imagen" role="alert"></span>
+            </div>
+
+            <div class="campo campo--ancho">
+              <div class="previsualizacion" id="previsualizacion">
+                <span class="texto-tenue texto-sm">Sin imagen</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestaña: precios y variantes -->
+        <div id="panel-precios" role="tabpanel" aria-labelledby="tab-precios" class="oculto">
+          <div class="campo">
+            <label class="campo__etiqueta" for="p-precio">
+              Precio base <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <div class="campo-moneda">
+              <span class="campo-moneda__simbolo" aria-hidden="true">$</span>
+              <input class="campo__control" id="p-precio" inputmode="decimal"
+                     required aria-describedby="e-p-precio">
+            </div>
+            <span class="campo__ayuda">Se cobra cuando ninguna variante esté vigente.</span>
+            <span class="campo__error" id="e-p-precio" role="alert"></span>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--c-borde-suave);margin:1rem 0">
+
+          <div class="fila fila--entre" style="margin-bottom:.75rem">
+            <div>
+              <h3 style="margin:0">Variantes por horario o temporada</h3>
+              <p class="texto-tenue texto-sm" style="margin:0">
+                Happy hour, temporada alta… Dos variantes no pueden coincidir en horario,
+                días y fechas a la vez.
+              </p>
+            </div>
+            <button class="btn btn--secundario btn--sm" type="button" id="btn-nueva-variante">
+              + Variante
+            </button>
+          </div>
+
+          <div id="variantes-lista"></div>
+          <p class="campo__error" id="e-variantes" role="alert"></p>
+        </div>
+
+        <!-- Pestaña: impuestos -->
+        <div id="panel-impuestos" role="tabpanel" aria-labelledby="tab-impuestos" class="oculto">
+          <div class="campo">
+            <label class="campo__etiqueta" for="p-impuesto">Tasa de impuesto (%)</label>
+            <select class="campo__control" id="p-impuesto" aria-describedby="ayuda-impuesto">
+              <option value="0">0 % — Exento</option>
+              <option value="5">5 %</option>
+              <option value="8" selected>8 % — Impoconsumo (restaurantes)</option>
+              <option value="19">19 % — IVA general</option>
+            </select>
+            <span class="campo__ayuda" id="ayuda-impuesto">
+              Se congela en la comanda al enviarla a cocina: cambiarlo después no altera
+              lo ya vendido.
+            </span>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="p-impuesto-otro">Otra tasa</label>
+            <input class="campo__control" id="p-impuesto-otro" type="number"
+                   min="0" max="100" step="0.01" placeholder="Ej.: 12.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-plato">Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="btn-guardar-plato">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal de categoría -->
+  <dialog id="modal-categoria" aria-labelledby="titulo-modal-cat">
+    <form id="form-categoria" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal-cat">Nueva categoría</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-cat" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="c-nombre">
+            Nombre <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <input class="campo__control" id="c-nombre" required aria-describedby="e-c-nombre">
+          <span class="campo__error" id="e-c-nombre" role="alert"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="c-destino">
+            Destino de preparación <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <select class="campo__control" id="c-destino" aria-describedby="ayuda-c-destino">
+            <option value="cocina">Cocina</option>
+            <option value="barra">Barra</option>
+            <option value="ninguno">Ninguno (no se prepara)</option>
+          </select>
+          <span class="campo__ayuda" id="ayuda-c-destino">
+            Decide a qué pantalla del KDS llegan estos platos al enviar la comanda.
+          </span>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-cat">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/menu.js"></script>
+</body>
+</html>

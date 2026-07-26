@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Seguimiento · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/comandero.css">
+</head>
+<body class="comandero">
+  <header class="cab-movil">
+    <div class="cab-movil__titulo">
+      Seguimiento
+      <div class="cab-movil__sub" id="nombre-mesero">—</div>
+    </div>
+    <div id="indicador-conexion"></div>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir">Salir</button>
+  </header>
+
+  <!-- Vista 14: Estado de Preparación de la Sala -->
+  <main class="principal-movil" id="contenido">
+    <div id="tarjetas-mesas"></div>
+  </main>
+
+  <nav class="nav-inferior" aria-label="Navegación del comandero">
+    <a class="nav-inferior__item" href="/comandero/">
+      <span class="nav-inferior__icono" aria-hidden="true">🗺</span>
+      Salón
+    </a>
+    <a class="nav-inferior__item nav-inferior__item--activo" href="/comandero/seguimiento.html" aria-current="page">
+      <span class="nav-inferior__icono" aria-hidden="true">🔔</span>
+      Seguimiento
+      <span class="nav-inferior__badge oculto" id="badge-listos">0</span>
+    </a>
+  </nav>
+
+  <script type="module" src="/comandero/js/seguimiento.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>KDS · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/kds.css">
+</head>
+<body class="kds">
+  <!-- Grupo 3: KDS de Cocina y Barra (modo oscuro) -->
+  <header class="kds-cab">
+    <span class="kds-cab__titulo">SIGR · KDS</span>
+    <!-- Selector de estacion (FSD 4.3: KDS de Cocina y Barra). El cocinero
+         puede atender ambas; sin este conmutador las lineas de barra (bebidas,
+         cocteles) nunca se veian y quedaban atascadas en la mesa. -->
+    <div class="kds-cab__estaciones" role="tablist" aria-label="Estación">
+      <button role="tab" class="kds-cab__estacion kds-cab__estacion--cocina kds-estacion-activa"
+              id="est-cocina" type="button" aria-selected="true">Cocina</button>
+      <button role="tab" class="kds-cab__estacion kds-cab__estacion--barra"
+              id="est-barra" type="button" aria-selected="false">Barra</button>
+    </div>
+    <span class="kds-cab__reloj" id="reloj">--:--</span>
+    <div id="indicador-conexion"></div>
+    <div class="kds-cab__tabs" role="tablist" aria-label="Vistas del KDS">
+      <button role="tab" class="kds-tab kds-tab--activo" id="tab-comandas" aria-selected="true">
+        Órdenes
+      </button>
+      <button role="tab" class="kds-tab" id="tab-produccion" aria-selected="false">
+        Consolidado
+      </button>
+      <button role="tab" class="kds-tab" id="tab-stock" aria-selected="false">
+        Agotados
+      </button>
+    </div>
+    <button class="kds-boton-salir" type="button" id="btn-salir">Salir</button>
+  </header>
+
+  <main class="kds-main" id="contenido">
+    <!-- Vista 15: monitor de órdenes entrantes -->
+    <div id="panel-comandas" class="kds-carrusel" role="region" aria-label="Órdenes entrantes"></div>
+
+    <!-- Vista 16: monitor consolidado de cocción -->
+    <div id="panel-produccion" class="kds-produccion oculto" role="region" aria-label="Consolidado por producto"></div>
+
+    <!-- Vista 17: desactivación temporal de platos -->
+    <div id="panel-stock" class="oculto" role="region" aria-label="Control de disponibilidad">
+      <label class="solo-lectores" for="buscar-stock">Buscar plato</label>
+      <input class="kds-stock-buscador" id="buscar-stock" type="search" placeholder="Buscar plato…" autocomplete="off">
+      <div id="lista-stock"></div>
+    </div>
+  </main>
+
+  <!-- Modal de detalle del consolidado (vista 16) -->
+  <dialog id="modal-detalle" aria-labelledby="titulo-detalle" style="background:var(--kds-superficie);color:var(--kds-texto)">
+    <div class="modal__cabecera" style="border-color:var(--kds-borde)">
+      <h2 id="titulo-detalle">—</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-detalle" aria-label="Cerrar" style="color:var(--kds-texto)">×</button>
+    </div>
+    <div class="modal__cuerpo" id="cuerpo-detalle"></div>
+  </dialog>
+
+  <!-- Sonido de comanda nueva (chime). Generado en JS, sin archivo externo. -->
+  <script type="module" src="/kds/js/kds.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roles y permisos · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 3: Gestor de Roles y Matriz de Permisos — /admin/seguridad/permisos -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Roles y permisos</h1>
+      </div>
+      <p class="texto-tenue texto-sm">
+        Los cuatro roles del sistema no se pueden eliminar, pero sí ajustar sus permisos.
+        Puede crear roles adicionales para casos particulares.
+      </p>
+    </div>
+
+    <div class="permisos">
+      <!-- Columna izquierda: lista de roles -->
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera">
+          <h2>Roles</h2>
+          <button class="btn btn--primario btn--sm" type="button" id="btn-nuevo-rol">+ Nuevo</button>
+        </div>
+        <div class="roles-lista" id="roles-lista" role="listbox" aria-label="Roles del sistema"></div>
+      </div>
+
+      <!-- Columna derecha: matriz de permisos del rol seleccionado -->
+      <div>
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera">
+            <div>
+              <h2 id="rol-titulo">Seleccione un rol</h2>
+              <p class="texto-tenue texto-sm" id="rol-descripcion" style="margin:0"></p>
+            </div>
+            <div class="fila" id="rol-acciones"></div>
+          </div>
+
+          <div class="tarjeta__cuerpo">
+            <div class="buscador">
+              <span class="buscador__icono" aria-hidden="true">🔍</span>
+              <label class="solo-lectores" for="buscar-permiso">Buscar permiso</label>
+              <input class="campo__control" id="buscar-permiso" type="search"
+                     placeholder="Filtrar permisos…" autocomplete="off">
+            </div>
+          </div>
+
+          <div id="matriz"></div>
+        </div>
+
+        <!-- Barra flotante de guardado (FSD 4.1 vista 3) -->
+        <div class="barra-flotante oculto" id="barra-guardado" role="status" aria-live="polite">
+          <span id="texto-pendientes"></span>
+          <div class="fila">
+            <button class="btn btn--secundario" type="button" id="btn-descartar">Descartar</button>
+            <button class="btn btn--primario" type="button" id="btn-guardar-permisos">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de rol -->
+  <dialog id="modal-rol" aria-labelledby="titulo-modal-rol">
+    <form id="form-rol" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal-rol">Nuevo rol</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-rol" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="r-nombre">
+            Nombre <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <input class="campo__control" id="r-nombre" required aria-describedby="e-r-nombre">
+          <span class="campo__error" id="e-r-nombre" role="alert"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="r-descripcion">Descripción</label>
+          <textarea class="campo__control" id="r-descripcion" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-rol">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/permisos.js"></script>
+</body>
+</html>

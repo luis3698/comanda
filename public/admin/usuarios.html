@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usuarios · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 4: Registro de Usuarios y Credenciales — /admin/seguridad/usuarios -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Usuarios</h1>
+        <span class="insignia insignia--neutra" id="conteo-total">—</span>
+      </div>
+      <p class="texto-tenue texto-sm">
+        Alta, edición y baja lógica del personal. Los usuarios nunca se eliminan:
+        conservan la trazabilidad de sus ventas y su auditoría.
+      </p>
+    </div>
+
+    <div class="herramientas">
+      <div class="buscador">
+        <span class="buscador__icono" aria-hidden="true">🔍</span>
+        <label class="solo-lectores" for="buscar">Buscar usuario</label>
+        <input class="campo__control" id="buscar" type="search"
+               placeholder="Buscar por nombre, correo o documento…" autocomplete="off">
+      </div>
+      <div class="crece"></div>
+      <button class="btn btn--primario" type="button" id="btn-nuevo">+ Nuevo usuario</button>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tabla-contenedor">
+        <table class="tabla tabla--tarjetas">
+          <caption class="solo-lectores">Listado de usuarios del sistema</caption>
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Correo</th>
+              <th scope="col">Documento</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Último acceso</th>
+              <th scope="col"><span class="solo-lectores">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+      <div class="paginacion" id="paginacion"></div>
+    </div>
+  </main>
+
+  <!-- Modal de alta/edición. FSD 4.1 vista 4: "formulario en dos columnas". -->
+  <dialog id="modal-usuario" aria-labelledby="titulo-modal">
+    <form id="form-usuario" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal">Nuevo usuario</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-modal"
+                aria-label="Cerrar">×</button>
+      </div>
+
+      <div class="modal__cuerpo">
+        <div class="form-dos-columnas">
+          <div class="campo campo--ancho">
+            <label class="campo__etiqueta" for="f-nombre">
+              Nombre completo <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="f-nombre" name="nombreCompleto" required
+                   aria-describedby="e-nombre">
+            <span class="campo__error" id="e-nombre" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-correo">
+              Correo <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="f-correo" name="correo" type="email" required
+                   autocomplete="off" aria-describedby="e-correo">
+            <span class="campo__error" id="e-correo" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-documento">Documento / código</label>
+            <input class="campo__control" id="f-documento" name="documento"
+                   autocomplete="off" aria-describedby="e-documento ayuda-documento">
+            <span class="campo__ayuda" id="ayuda-documento">Se usa para entrar con PIN en tablets.</span>
+            <span class="campo__error" id="e-documento" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-rol">
+              Rol <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <select class="campo__control" id="f-rol" name="idRol" required
+                    aria-describedby="e-rol"></select>
+            <span class="campo__error" id="e-rol" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-rfid">Tarjeta RFID</label>
+            <div class="fila">
+              <input class="campo__control" id="f-rfid" name="uidRfid"
+                     autocomplete="off" placeholder="Sin emparejar"
+                     aria-describedby="e-rfid">
+              <button class="btn btn--secundario btn--sm" type="button" id="btn-rfid">Leer</button>
+            </div>
+            <span class="campo__error" id="e-rfid" role="alert"></span>
+          </div>
+
+          <div class="campo campo--ancho">
+            <hr style="border:none;border-top:1px solid var(--c-borde-suave);margin:.5rem 0 1rem">
+            <p class="texto-tenue texto-sm" id="nota-credenciales">
+              Las credenciales se guardan cifradas y no se pueden consultar después.
+            </p>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-password">
+              Contraseña <span class="campo__requerido" id="req-password" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="f-password" name="password" type="password"
+                   autocomplete="new-password" aria-describedby="e-password fortaleza-texto">
+            <div class="fortaleza">
+              <div class="fortaleza__barra">
+                <div class="fortaleza__relleno" id="fortaleza-relleno"></div>
+              </div>
+              <div class="fortaleza__texto" id="fortaleza-texto" aria-live="polite"></div>
+            </div>
+            <span class="campo__error" id="e-password" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-pin">
+              PIN de 4 dígitos <span class="campo__requerido" id="req-pin" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="f-pin" name="pin" type="password"
+                   inputmode="numeric" maxlength="4" autocomplete="off"
+                   aria-describedby="e-pin">
+            <span class="campo__error" id="e-pin" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="f-pin2">Confirmar PIN</label>
+            <input class="campo__control" id="f-pin2" type="password"
+                   inputmode="numeric" maxlength="4" autocomplete="off"
+                   aria-describedby="e-pin2">
+            <span class="campo__error" id="e-pin2" role="alert"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar">Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="btn-guardar">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/usuarios.js"></script>
+</body>
+</html>

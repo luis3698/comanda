@@ -1,0 +1,104 @@
+/* =====================================================================
+   Vista 1 — Dashboard de Inteligencia de Negocio.
+   FSD 4.1: "CSS Grid de 12 columnas: fila superior con 4 tarjetas KPI, fila
+   media con gráfica de ventas por hora (líneas) y top 10 platos (barras),
+   fila inferior con tabla de alertas de stock crítico".
+   ===================================================================== */
+
+.dash {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+}
+
+.dash__kpis { grid-column: span 12; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.dash__grafica { grid-column: span 8; }
+.dash__top { grid-column: span 4; }
+.dash__alertas { grid-column: span 12; }
+
+/* --- Tarjetas KPI --- */
+.kpi {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  background: var(--c-superficie);
+  box-shadow: var(--sombra);
+}
+.kpi__etiqueta {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--c-texto-tenue);
+}
+.kpi__valor {
+  font-size: 1.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  margin-top: .25rem;
+  color: var(--c-primario-fuerte);
+}
+.kpi__pie { font-size: .78rem; color: var(--c-texto-tenue); margin-top: .2rem; }
+.kpi--alerta .kpi__valor { color: var(--c-error); }
+
+/* --- Gráficas en SVG ---
+   Sin librerías: el FSD 2.1 impone JS vanilla, así que se dibujan a mano. */
+.grafica { width: 100%; height: 240px; display: block; }
+.grafica__eje { stroke: var(--c-borde); stroke-width: 1; }
+.grafica__rejilla { stroke: var(--c-borde-suave); stroke-width: 1; stroke-dasharray: 3 3; }
+.grafica__linea { fill: none; stroke: var(--c-primario); stroke-width: 2.5; stroke-linejoin: round; }
+.grafica__area { fill: var(--c-primario); opacity: .12; }
+.grafica__punto { fill: var(--c-primario); }
+.grafica__punto:hover { r: 6; }
+.grafica__etiqueta { font-size: 10px; fill: var(--c-texto-tenue); }
+
+.barra { fill: var(--c-primario); transition: fill 100ms ease; }
+.barra:hover { fill: var(--c-primario-fuerte); }
+.barra__texto { font-size: 11px; fill: var(--c-texto); }
+.barra__valor { font-size: 11px; font-weight: 700; fill: var(--c-texto-suave); }
+
+/* Tooltip de las gráficas (mousemove, FSD 4.1 vista 1) */
+.tooltip {
+  position: fixed;
+  z-index: 60;
+  padding: .4rem .6rem;
+  border-radius: var(--radio-sm);
+  background: var(--c-texto);
+  color: #fff;
+  font-size: .78rem;
+  pointer-events: none;
+  box-shadow: var(--sombra-md);
+  white-space: nowrap;
+}
+
+/* --- Alertas de stock (RF-09) --- */
+.alerta-stock {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+  cursor: pointer;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--c-borde-suave);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--c-texto);
+}
+.alerta-stock:last-child { border-bottom: none; }
+@media (hover: hover) { .alerta-stock:hover { background: var(--c-fondo); } }
+.alerta-stock__nombre { flex: 1; font-weight: 600; }
+.alerta-stock__cifras { font-variant-numeric: tabular-nums; font-size: .85rem; }
+
+@media (max-width: 1100px) {
+  .dash__kpis { grid-template-columns: repeat(2, 1fr); }
+  .dash__grafica, .dash__top { grid-column: span 12; }
+}
+/* FSD 4.1 vista 1: "en < 768 px las tarjetas KPI pasan a columna única y las
+   gráficas se apilan verticalmente con scroll". */
+@media (max-width: 768px) {
+  .dash__kpis { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Comandero · SIGR</title>
+  <link rel="manifest" href="/comandero/manifest.json">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/comandero.css">
+</head>
+<body class="comandero">
+  <!-- Vista 11: Mapa de Salón para Servicio — /comandero/salon -->
+  <header class="cab-movil">
+    <div class="cab-movil__titulo">
+      Salón
+      <div class="cab-movil__sub" id="nombre-mesero">—</div>
+    </div>
+    <div id="indicador-conexion"></div>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir">Salir</button>
+  </header>
+
+  <main class="principal-movil" id="contenido">
+    <div class="zonas-scroll" id="zonas" role="tablist" aria-label="Zonas del salón"></div>
+
+    <!-- El plano reproduce la distribución del administrador, en solo lectura -->
+    <div class="plano" id="plano"></div>
+
+    <div class="fila fila--entre" style="margin:.75rem 0 .5rem">
+      <span class="texto-tenue texto-sm" id="resumen-zona">—</span>
+      <button class="btn btn--secundario btn--sm" type="button" id="btn-vista">
+        Ver como lista
+      </button>
+    </div>
+
+    <!-- Alternativa en lista para pantallas muy pequeñas (FSD 4.2 vista 11) -->
+    <div class="mesas-lista oculto" id="mesas-lista"></div>
+
+    <div class="tarjeta" style="margin-top:.75rem">
+      <div class="tarjeta__cuerpo texto-sm texto-tenue">
+        <strong>Colores:</strong>
+        <span class="insignia insignia--exito">✓ Libre</span>
+        <span class="insignia insignia--error">● Ocupada</span>
+        <span class="insignia insignia--alerta">🧾 Pre-cuenta</span>
+        <span class="insignia insignia--neutra">⊘ Bloqueada</span>
+      </div>
+    </div>
+  </main>
+
+  <nav class="nav-inferior" aria-label="Navegación del comandero">
+    <a class="nav-inferior__item nav-inferior__item--activo" href="/comandero/" aria-current="page">
+      <span class="nav-inferior__icono" aria-hidden="true">🗺</span>
+      Salón
+    </a>
+    <a class="nav-inferior__item" href="/comandero/seguimiento.html">
+      <span class="nav-inferior__icono" aria-hidden="true">🔔</span>
+      Seguimiento
+      <span class="nav-inferior__badge oculto" id="badge-listos">0</span>
+    </a>
+  </nav>
+
+  <!-- Modal: ¿cuántas personas? (FSD 4.2 vista 11) -->
+  <dialog id="modal-comensales" aria-labelledby="titulo-comensales">
+    <div class="modal__cabecera">
+      <h2 id="titulo-comensales">Mesa —</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-comensales" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo" style="text-align:center">
+      <p>¿Cuántas personas se sientan?</p>
+      <div class="stepper" style="justify-content:center;margin:1rem 0">
+        <button class="stepper__btn" type="button" id="btn-menos" aria-label="Menos personas">−</button>
+        <span class="stepper__valor" id="valor-comensales" aria-live="polite">2</span>
+        <button class="stepper__btn" type="button" id="btn-mas" aria-label="Más personas">+</button>
+      </div>
+      <p class="texto-tenue texto-sm" id="capacidad-mesa"></p>
+    </div>
+    <div class="modal__pie">
+      <button class="btn btn--secundario" type="button" id="btn-cancelar-comensales">Cancelar</button>
+      <button class="btn btn--primario" type="button" id="btn-iniciar">Iniciar comanda</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/comandero/js/salon.js"></script>
+</body>
+</html>

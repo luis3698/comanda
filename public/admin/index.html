@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 1: Dashboard de Inteligencia de Negocio — /admin/dashboard -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Dashboard</h1>
+        <span id="indicador-conexion"></span>
+      </div>
+      <div class="fila" style="gap:.6rem;flex-wrap:wrap">
+        <label class="texto-sm texto-tenue" for="fecha">Día:</label>
+        <input class="campo__control" id="fecha" type="date" style="max-width:180px">
+        <button class="btn btn--secundario btn--sm" type="button" id="btn-hoy">Hoy</button>
+      </div>
+    </div>
+
+    <div class="dash">
+      <!-- Fila superior: 4 tarjetas KPI -->
+      <div class="dash__kpis" id="kpis"></div>
+
+      <!-- Fila media: ventas por hora + top platos -->
+      <div class="tarjeta dash__grafica">
+        <div class="tarjeta__cabecera">
+          <h2>Ventas por hora</h2>
+          <span class="texto-tenue texto-sm" id="resumen-horas"></span>
+        </div>
+        <div class="tarjeta__cuerpo">
+          <svg class="grafica" id="grafica-horas" role="img"
+               aria-label="Gráfica de ventas por hora del día"></svg>
+        </div>
+      </div>
+
+      <div class="tarjeta dash__top">
+        <div class="tarjeta__cabecera"><h2>Platos estrella</h2></div>
+        <div class="tarjeta__cuerpo">
+          <svg class="grafica" id="grafica-top" role="img"
+               aria-label="Gráfica de los platos más vendidos"></svg>
+        </div>
+      </div>
+
+      <!-- Fila inferior: alertas de stock crítico -->
+      <div class="tarjeta dash__alertas">
+        <div class="tarjeta__cabecera">
+          <h2>Alertas de stock crítico</h2>
+          <span class="insignia insignia--neutra" id="conteo-alertas">—</span>
+        </div>
+        <div id="alertas"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/admin/js/dashboard.js"></script>
+</body>
+</html>

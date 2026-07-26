@@ -1,0 +1,360 @@
+/* =====================================================================
+   Backoffice del Administrador (Grupo 1).
+   FSD 4: "<header> fijo (logo, usuario, reloj) + <aside> sidebar de
+   navegación colapsable + <main> contenido + modales <dialog>".
+   ===================================================================== */
+
+body.admin {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: var(--header-alto) 1fr;
+  grid-template-areas:
+    "cabecera cabecera"
+    "lateral  principal";
+}
+
+/* --- Header fijo --- */
+.cabecera {
+  grid-area: cabecera;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  background: var(--c-primario);
+  color: #fff;
+}
+.cabecera__marca {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.cabecera__reloj {
+  font-family: var(--fuente-mono);
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, .9);
+}
+.cabecera__usuario {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .85rem;
+}
+.cabecera__rol {
+  padding: .1rem .5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  font-size: .72rem;
+  font-weight: 650;
+}
+.cabecera .btn {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .3);
+  background: transparent;
+  min-height: 38px;
+}
+@media (hover: hover) {
+  .cabecera .btn:hover { background: rgba(255, 255, 255, .15); }
+}
+
+.cabecera__alternar {
+  display: none;
+  min-height: 38px;
+  padding: .3rem .6rem;
+}
+
+/* --- Sidebar --- */
+.lateral {
+  grid-area: lateral;
+  width: var(--sidebar-ancho);
+  background: var(--c-superficie);
+  border-right: 1px solid var(--c-borde-suave);
+  overflow-y: auto;
+  transition: width 140ms ease;
+}
+.lateral--colapsada { width: 60px; }
+.lateral--colapsada .nav__texto,
+.lateral--colapsada .nav__grupo-titulo { display: none; }
+.lateral--colapsada .nav__enlace { justify-content: center; }
+
+.nav { padding: .75rem 0; }
+.nav__grupo-titulo {
+  padding: .75rem 1rem .3rem;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--c-texto-tenue);
+}
+.nav__enlace {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  min-height: var(--target-tactil);
+  padding: .5rem 1rem;
+  color: var(--c-texto-suave);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  font-size: .9rem;
+  font-weight: 550;
+}
+/* La página activa se distingue por color, fondo y borde, no solo color (6.4). */
+.nav__enlace--activo {
+  color: var(--c-primario);
+  background: var(--c-primario-suave);
+  border-left-color: var(--c-primario);
+  font-weight: 650;
+}
+@media (hover: hover) {
+  .nav__enlace:not(.nav__enlace--activo):hover { background: var(--c-fondo); }
+}
+.nav__icono { font-size: 1.1rem; width: 1.3rem; text-align: center; flex-shrink: 0; }
+
+/* --- Contenido --- */
+.principal {
+  grid-area: principal;
+  padding: 1.25rem;
+  overflow-x: hidden;
+}
+.principal__cabecera { margin-bottom: 1.25rem; }
+.principal__titulo { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+/* --- Barra de herramientas --- */
+.herramientas {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.buscador { position: relative; flex: 1; min-width: 200px; max-width: 380px; }
+.buscador .campo__control { padding-left: 2.2rem; }
+.buscador__icono {
+  position: absolute;
+  left: .7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-texto-tenue);
+  pointer-events: none;
+}
+
+/* --- Paginación --- */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: .75rem 1rem;
+  border-top: 1px solid var(--c-borde-suave);
+  font-size: .85rem;
+  color: var(--c-texto-suave);
+}
+
+/* --- Formulario de dos columnas (FSD 4.1 vista 4) --- */
+.form-dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+.form-dos-columnas .campo--ancho { grid-column: 1 / -1; }
+
+/* --- Medidor de fortaleza de contraseña (FSD 4.1 vista 4) --- */
+.fortaleza { margin-top: .4rem; }
+.fortaleza__barra {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--c-borde-suave);
+  overflow: hidden;
+}
+.fortaleza__relleno {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  transition: width 140ms ease, background-color 140ms ease;
+}
+.fortaleza__texto { margin-top: .25rem; font-size: .78rem; font-weight: 600; }
+
+/* --- Matriz de permisos (vista 3) --- */
+.permisos {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.roles-lista { display: flex; flex-direction: column; gap: .25rem; padding: .5rem; }
+.rol-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  min-height: var(--target-tactil);
+  padding: .5rem .7rem;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--c-texto);
+}
+.rol-item--activo {
+  background: var(--c-primario-suave);
+  border-color: var(--c-primario);
+  font-weight: 650;
+}
+@media (hover: hover) {
+  .rol-item:not(.rol-item--activo):hover { background: var(--c-fondo); }
+}
+.rol-item__nombre { flex: 1; }
+.rol-item__meta { font-size: .75rem; color: var(--c-texto-tenue); }
+
+/* Acordeón por módulo */
+.modulo { border-bottom: 1px solid var(--c-borde-suave); }
+.modulo:last-child { border-bottom: none; }
+.modulo__resumen {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  min-height: var(--target-tactil);
+  padding: .6rem 1rem;
+  cursor: pointer;
+  font-weight: 650;
+  list-style: none;
+  user-select: none;
+}
+.modulo__resumen::-webkit-details-marker { display: none; }
+.modulo__resumen::before {
+  content: '▸';
+  transition: transform 120ms ease;
+  color: var(--c-texto-tenue);
+}
+details[open] > .modulo__resumen::before { transform: rotate(90deg); }
+@media (hover: hover) {
+  .modulo__resumen:hover { background: var(--c-fondo); }
+}
+.modulo__conteo {
+  margin-left: auto;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--c-texto-tenue);
+}
+
+.permiso-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: .7rem;
+  padding: .6rem 1rem .6rem 2.4rem;
+  border-top: 1px solid var(--c-borde-suave);
+}
+/* Cambio sin guardar: resaltado ámbar (FSD 4.1 vista 3). Lleva también el
+   texto "sin guardar", para no depender del color (6.4). */
+.permiso-fila--pendiente { background: var(--c-alerta-bg); }
+.permiso-fila__control { margin-top: .2rem; width: 18px; height: 18px; flex-shrink: 0; }
+.permiso-fila__codigo { font-family: var(--fuente-mono); font-size: .8rem; color: var(--c-texto-suave); }
+.permiso-fila__desc { font-size: .85rem; }
+.permiso-fila__marca {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--c-alerta);
+  text-transform: uppercase;
+}
+
+/* Barra flotante de guardado (FSD 4.1 vista 3) */
+.barra-flotante {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: .75rem 1rem;
+  background: var(--c-texto);
+  color: #fff;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-lg);
+}
+.barra-flotante .btn--secundario {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .35);
+  background: transparent;
+}
+
+/* =====================================================================
+   Responsivo. FSD 4.1: en móvil la matriz pasa a acordeones y la tabla
+   de usuarios colapsa a tarjetas apiladas.
+   ===================================================================== */
+@media (max-width: 1024px) {
+  .permisos { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  body.admin {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cabecera"
+      "principal";
+  }
+  .cabecera__alternar { display: inline-flex; }
+  .cabecera__reloj { display: none; }
+
+  /* El sidebar pasa a panel deslizante. */
+  .lateral {
+    position: fixed;
+    top: var(--header-alto);
+    bottom: 0;
+    left: 0;
+    z-index: 25;
+    width: var(--sidebar-ancho);
+    transform: translateX(-100%);
+    transition: transform 160ms ease;
+    box-shadow: var(--sombra-lg);
+  }
+  .lateral--abierta { transform: none; }
+  .lateral--colapsada { width: var(--sidebar-ancho); }
+  .lateral--colapsada .nav__texto,
+  .lateral--colapsada .nav__grupo-titulo { display: revert; }
+
+  .principal { padding: 1rem; }
+  .form-dos-columnas { grid-template-columns: 1fr; }
+
+  /* Tabla -> tarjetas apiladas. Cada celda muestra su etiqueta desde
+     data-etiqueta, así la fila sigue siendo legible sin encabezados. */
+  .tabla--tarjetas thead { display: none; }
+  .tabla--tarjetas tbody tr {
+    display: block;
+    margin-bottom: .75rem;
+    border: 1px solid var(--c-borde-suave);
+    border-radius: var(--radio);
+    padding: .5rem;
+    background: var(--c-superficie);
+  }
+  .tabla--tarjetas tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .4rem .25rem;
+    border-bottom: none;
+    text-align: right;
+  }
+  .tabla--tarjetas tbody td::before {
+    content: attr(data-etiqueta);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--c-texto-tenue);
+    text-align: left;
+  }
+  .tabla--tarjetas .tabla__acciones { justify-content: flex-end; }
+}

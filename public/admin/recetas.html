@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modificadores y recetario · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/recetas.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 6: Configurador de Modificadores y Recetario — /admin/catalogo/recetas -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <h1>Modificadores y recetario</h1>
+      <p class="texto-tenue texto-sm">
+        Los modificadores personalizan un plato al pedirlo. La ficha técnica define qué
+        insumos consume, y es lo que descuenta el inventario en cada venta.
+      </p>
+    </div>
+
+    <div role="tablist" class="pestanas-principales" aria-label="Secciones">
+      <button role="tab" type="button" class="pestana-principal pestana-principal--activa"
+              id="tab-modificadores" aria-controls="panel-modificadores" aria-selected="true">
+        Modificadores
+      </button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-fichas" aria-controls="panel-fichas" aria-selected="false">
+        Fichas técnicas
+      </button>
+    </div>
+
+    <!-- ============ Pestaña: Modificadores ============ -->
+    <div id="panel-modificadores" role="tabpanel" aria-labelledby="tab-modificadores">
+      <div class="herramientas">
+        <p class="texto-tenue texto-sm crece" style="margin:0">
+          Un grupo obligatorio impide enviar el plato sin elegir una opción.
+        </p>
+        <button class="btn btn--primario" type="button" id="btn-nuevo-grupo">+ Nuevo grupo</button>
+      </div>
+      <div id="grupos-lista"></div>
+    </div>
+
+    <!-- ============ Pestaña: Fichas técnicas ============ -->
+    <div id="panel-fichas" role="tabpanel" aria-labelledby="tab-fichas" class="oculto">
+      <div class="herramientas">
+        <div class="buscador">
+          <span class="buscador__icono" aria-hidden="true">🔍</span>
+          <label class="solo-lectores" for="buscar-plato">Buscar plato</label>
+          <input class="campo__control" id="buscar-plato" type="search" list="lista-platos"
+                 placeholder="Buscar el plato cuya ficha quiere editar…" autocomplete="off">
+          <datalist id="lista-platos"></datalist>
+        </div>
+      </div>
+
+      <div class="ficha" id="ficha">
+        <div class="vacio">
+          <p>Busque un plato para ver o editar su ficha técnica.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de grupo de modificadores -->
+  <dialog id="modal-grupo" aria-labelledby="titulo-modal-grupo">
+    <form id="form-grupo" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-modal-grupo">Nuevo grupo</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-grupo" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="campo">
+          <label class="campo__etiqueta" for="g-nombre">
+            Nombre <span class="campo__requerido" aria-hidden="true">*</span>
+          </label>
+          <input class="campo__control" id="g-nombre" required aria-describedby="e-g-nombre">
+          <span class="campo__ayuda">Por ejemplo: Término de cocción, Adicionales.</span>
+          <span class="campo__error" id="e-g-nombre" role="alert"></span>
+        </div>
+
+        <div class="campo">
+          <label class="fila" style="gap:.5rem;cursor:pointer">
+            <input type="checkbox" id="g-obligatorio">
+            <span><strong>Obligatorio</strong> — el mesero no puede enviar el plato sin elegir</span>
+          </label>
+        </div>
+
+        <div class="form-dos-columnas">
+          <div class="campo">
+            <label class="campo__etiqueta" for="g-min">Mínimo de opciones</label>
+            <input class="campo__control" id="g-min" type="number" min="0" max="20" value="0"
+                   aria-describedby="e-g-min">
+            <span class="campo__error" id="e-g-min" role="alert"></span>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="g-max">Máximo de opciones</label>
+            <input class="campo__control" id="g-max" type="number" min="1" max="20" value="1"
+                   aria-describedby="e-g-max">
+            <span class="campo__error" id="e-g-max" role="alert"></span>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--c-borde-suave);margin:1rem 0">
+
+        <div class="fila fila--entre" style="margin-bottom:.5rem">
+          <h3 style="margin:0">Opciones</h3>
+          <button class="btn btn--secundario btn--sm" type="button" id="btn-nueva-opcion">
+            + Opción
+          </button>
+        </div>
+        <div id="opciones-lista"></div>
+
+        <hr style="border:none;border-top:1px solid var(--c-borde-suave);margin:1rem 0">
+
+        <div class="campo">
+          <span class="campo__etiqueta">Platos que lo usan</span>
+          <div class="platos-seleccion" id="platos-seleccion"></div>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-grupo">Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="btn-guardar-grupo">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/recetas.js"></script>
+</body>
+</html>

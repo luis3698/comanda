@@ -1,0 +1,252 @@
+/* =====================================================================
+   Vista 5 — Editor de menú, precios y categorías.
+   FSD 4.1: "dos paneles: izquierda árbol de categorías (reordenables por
+   arrastre); derecha grilla de tarjetas de producto".
+   ===================================================================== */
+
+.menu-editor {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* --- Árbol de categorías --- */
+.categorias-movil { display: none; padding: .75rem; }
+.categorias-lista { padding: .5rem; display: flex; flex-direction: column; gap: .2rem; }
+
+.categoria-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  min-height: var(--target-tactil);
+  padding: .5rem .6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--c-texto);
+  cursor: pointer;
+}
+.categoria-item--activa {
+  background: var(--c-primario-suave);
+  border-color: var(--c-primario);
+  font-weight: 650;
+}
+.categoria-item--arrastrando { opacity: .4; }
+.categoria-item--destino { border-top: 3px solid var(--c-primario); }
+@media (hover: hover) {
+  .categoria-item:not(.categoria-item--activa):hover { background: var(--c-fondo); }
+}
+.categoria-item__asa {
+  cursor: grab;
+  color: var(--c-texto-tenue);
+  font-size: .9rem;
+  line-height: 1;
+}
+.categoria-item__nombre { flex: 1; }
+.categoria-item__conteo {
+  font-size: .72rem;
+  padding: .05rem .4rem;
+  border-radius: 999px;
+  background: var(--c-borde-suave);
+  color: var(--c-texto-suave);
+}
+/* El destino de preparación se distingue por texto, no solo por color (6.4). */
+.categoria-item__destino {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.categoria-item__destino--cocina { color: var(--c-alerta); }
+.categoria-item__destino--barra { color: var(--c-info); }
+.categoria-item__destino--ninguno { color: var(--c-texto-tenue); }
+
+.categorias-orden-botones { display: flex; flex-direction: column; gap: 1px; }
+.categorias-orden-botones button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 .2rem;
+  font-size: .6rem;
+  color: var(--c-texto-tenue);
+  line-height: 1.1;
+}
+@media (hover: hover) {
+  .categorias-orden-botones button:hover { color: var(--c-primario); }
+}
+
+/* --- Grilla de platos ---
+   FSD 4.1 vista 5: "grilla de tarjetas de 4 → 2 → 1 columnas según ancho". */
+.grilla-platos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .85rem;
+}
+
+.plato {
+  display: flex;
+  flex-direction: column;
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+  transition: box-shadow 100ms ease, border-color 100ms ease;
+}
+@media (hover: hover) {
+  .plato:hover { box-shadow: var(--sombra-md); border-color: var(--c-borde); }
+}
+.plato--inactivo { opacity: .6; }
+
+.plato__foto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--c-fondo);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.plato__foto img { width: 100%; height: 100%; object-fit: cover; }
+.plato__sin-foto { font-size: 2rem; opacity: .3; }
+
+.plato__insignias {
+  position: absolute;
+  top: .4rem;
+  left: .4rem;
+  display: flex;
+  gap: .25rem;
+  flex-wrap: wrap;
+}
+
+.plato__cuerpo { padding: .7rem; flex: 1; display: flex; flex-direction: column; gap: .3rem; }
+.plato__nombre { font-weight: 650; font-size: .92rem; line-height: 1.25; }
+.plato__categoria { font-size: .72rem; color: var(--c-texto-tenue); }
+.plato__precio {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-primario-fuerte);
+  font-variant-numeric: tabular-nums;
+}
+.plato__meta { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: auto; padding-top: .3rem; }
+.plato__acciones {
+  display: flex;
+  gap: .3rem;
+  padding: .5rem .7rem;
+  border-top: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+}
+.plato__acciones .btn { flex: 1; }
+
+/* --- Pestañas del modal --- */
+.pestanas-modal {
+  display: flex;
+  border-bottom: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+  overflow-x: auto;
+}
+.pestana-modal {
+  min-height: 44px;
+  padding: .6rem 1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  font-size: .88rem;
+  color: var(--c-texto-tenue);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pestana-modal--activa {
+  color: var(--c-primario);
+  border-bottom-color: var(--c-primario);
+  background: var(--c-superficie);
+}
+
+/* --- Campo monetario --- */
+.campo-moneda { position: relative; }
+.campo-moneda__simbolo {
+  position: absolute;
+  left: .7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-texto-tenue);
+  font-weight: 600;
+  pointer-events: none;
+}
+.campo-moneda .campo__control {
+  padding-left: 1.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Vista previa de la imagen --- */
+.previsualizacion {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 7;
+  border: 2px dashed var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-fondo);
+  overflow: hidden;
+}
+.previsualizacion img { width: 100%; height: 100%; object-fit: contain; }
+
+/* --- Filas de variantes de precio --- */
+.variante {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+  gap: .5rem;
+  align-items: end;
+  padding: .6rem;
+  margin-bottom: .5rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio-sm);
+  background: var(--c-fondo);
+}
+.variante .campo { margin-bottom: 0; }
+.variante__dias { grid-column: 1 / -1; display: flex; gap: .3rem; flex-wrap: wrap; }
+.variante__dia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.variante__dia input { position: absolute; opacity: 0; pointer-events: none; }
+/* El día activo se marca con fondo y color de texto, y sigue siendo legible
+   para un lector de pantalla por el checkbox subyacente (6.4). */
+.variante__dia--activo {
+  background: var(--c-primario);
+  border-color: var(--c-primario);
+  color: #fff;
+}
+.variante__conflicto { border-color: var(--c-error); border-width: 2px; }
+
+/* =====================================================================
+   Responsivo
+   ===================================================================== */
+@media (max-width: 1280px) {
+  .grilla-platos { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1024px) {
+  .grilla-platos { grid-template-columns: repeat(2, 1fr); }
+  .variante { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  /* FSD 4.1 vista 5: "el árbol de categorías se convierte en select desplegable". */
+  .menu-editor { grid-template-columns: 1fr; }
+  .categorias-lista { display: none; }
+  .categorias-movil { display: block; }
+  .grilla-platos { grid-template-columns: 1fr; }
+}

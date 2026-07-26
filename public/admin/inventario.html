@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventario · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/recetas.css">
+  <link rel="stylesheet" href="/css/inventario.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 7: Registro de Proveedores, Compras e Inventarios — /admin/inventario/compras -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <h1>Inventario</h1>
+      <p class="texto-tenue texto-sm">
+        Al marcar una compra como recibida, el sistema suma el stock y recalcula el costo
+        promedio ponderado de cada insumo.
+      </p>
+    </div>
+
+    <div role="tablist" class="pestanas-principales" aria-label="Secciones de inventario">
+      <button role="tab" type="button" class="pestana-principal pestana-principal--activa"
+              id="tab-existencias" aria-controls="panel-existencias" aria-selected="true">Existencias</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-compras" aria-controls="panel-compras" aria-selected="false">Compras</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-proveedores" aria-controls="panel-proveedores" aria-selected="false">Proveedores</button>
+    </div>
+
+    <!-- ============ Existencias ============ -->
+    <div id="panel-existencias" role="tabpanel" aria-labelledby="tab-existencias">
+      <div class="herramientas">
+        <div class="buscador">
+          <span class="buscador__icono" aria-hidden="true">🔍</span>
+          <label class="solo-lectores" for="buscar-insumo">Buscar insumo</label>
+          <input class="campo__control" id="buscar-insumo" type="search" placeholder="Buscar insumo…" autocomplete="off">
+        </div>
+        <span class="crece"></span>
+        <span class="insignia insignia--neutra" id="conteo-insumos">—</span>
+        <span class="insignia insignia--error oculto" id="conteo-criticos">—</span>
+      </div>
+      <div class="tarjeta">
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <caption class="solo-lectores">Existencias de insumos</caption>
+            <thead>
+              <tr>
+                <th scope="col">Estado</th>
+                <th scope="col">Insumo</th>
+                <th scope="col" class="celda-dinero">Stock</th>
+                <th scope="col" class="celda-dinero">Mínimo</th>
+                <th scope="col" class="celda-dinero">Costo prom.</th>
+                <th scope="col" class="celda-dinero">Valor</th>
+                <th scope="col"><span class="solo-lectores">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-existencias"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Compras ============ -->
+    <div id="panel-compras" role="tabpanel" aria-labelledby="tab-compras" class="oculto">
+      <div class="herramientas">
+        <span class="texto-tenue texto-sm crece">
+          Una compra en borrador no mueve stock. Solo al recibirla se actualiza el inventario.
+        </span>
+        <button class="btn btn--primario" type="button" id="btn-nueva-compra">+ Nueva compra</button>
+      </div>
+      <div class="tarjeta">
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <caption class="solo-lectores">Compras registradas</caption>
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Proveedor</th>
+                <th scope="col">Factura</th>
+                <th scope="col" class="celda-entero">Líneas</th>
+                <th scope="col" class="celda-dinero">Total</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="solo-lectores">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-compras"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Proveedores ============ -->
+    <div id="panel-proveedores" role="tabpanel" aria-labelledby="tab-proveedores" class="oculto">
+      <div class="herramientas">
+        <span class="crece"></span>
+        <button class="btn btn--primario" type="button" id="btn-nuevo-proveedor">+ Nuevo proveedor</button>
+      </div>
+      <div class="tarjeta">
+        <div class="tabla-contenedor">
+          <table class="tabla tabla--tarjetas">
+            <caption class="solo-lectores">Proveedores</caption>
+            <thead>
+              <tr>
+                <th scope="col">Razón social</th>
+                <th scope="col">NIT</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col" class="celda-entero">Compras</th>
+                <th scope="col"><span class="solo-lectores">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-proveedores"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: kárdex de un insumo -->
+  <dialog id="modal-kardex" aria-labelledby="titulo-kardex">
+    <div class="modal__cabecera">
+      <h2 id="titulo-kardex">Kárdex</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-kardex" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo" id="cuerpo-kardex"></div>
+  </dialog>
+
+  <!-- Modal: ajuste manual -->
+  <dialog id="modal-ajuste" aria-labelledby="titulo-ajuste">
+    <form id="form-ajuste" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-ajuste">Ajustar inventario</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-ajuste" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <p class="texto-tenue texto-sm" id="ajuste-insumo"></p>
+        <div class="campo">
+          <label class="campo__etiqueta" for="a-tipo">Tipo</label>
+          <select class="campo__control" id="a-tipo">
+            <option value="ajuste">Ajuste (conteo físico)</option>
+            <option value="merma">Merma (pérdida)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="a-cantidad">Cantidad <span class="campo__requerido">*</span></label>
+          <input class="campo__control" id="a-cantidad" inputmode="decimal" aria-describedby="ayuda-cantidad e-a-cantidad">
+          <span class="campo__ayuda" id="ayuda-cantidad">
+            En ajuste, use signo negativo para restar. En merma siempre se resta.
+          </span>
+          <span class="campo__error" id="e-a-cantidad" role="alert"></span>
+        </div>
+        <div class="campo">
+          <label class="campo__etiqueta" for="a-motivo">Motivo <span class="campo__requerido">*</span></label>
+          <input class="campo__control" id="a-motivo" aria-describedby="e-a-motivo"
+                 placeholder="Ej.: conteo físico mensual">
+          <span class="campo__error" id="e-a-motivo" role="alert"></span>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-ajuste">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Registrar ajuste</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: compra -->
+  <dialog id="modal-compra" aria-labelledby="titulo-compra">
+    <form id="form-compra" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-compra">Nueva compra</h2>
+        <button class="btn btn--plano" type="button" id="btn-cerrar-compra" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal__cuerpo">
+        <div class="form-dos-columnas">
+          <div class="campo">
+            <label class="campo__etiqueta" for="c-proveedor">Proveedor <span class="campo__requerido">*</span></label>
+            <select class="campo__control" id="c-proveedor"></select>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="c-factura">Factura del proveedor</label>
+            <input class="campo__control" id="c-factura" placeholder="Ej.: A-12345">
+          </div>
+        </div>
+
+        <div class="fila fila--entre" style="margin:.5rem 0">
+          <h3 style="margin:0">Insumos comprados</h3>
+          <button class="btn btn--secundario btn--sm" type="button" id="btn-linea-compra">+ Línea</button>
+        </div>
+        <div id="lineas-compra"></div>
+
+        <div class="desglose-total-compra" id="total-compra">Total: $0</div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--secundario" type="button" id="btn-cancelar-compra">Cancelar</button>
+        <button class="btn btn--primario" type="submit" id="btn-guardar-compra">Guardar borrador</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/admin/js/inventario.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Dividir cuenta · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/caja.css">
+</head>
+<body class="caja">
+  <header class="pos-cab">
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-volver" aria-label="Volver">‹</button>
+    <span class="pos-cab__marca" id="titulo-dividir">Dividir —</span>
+    <span class="pos-cab__turno" id="estado-turno">—</span>
+    <span class="pos-cab__reloj" id="reloj-pos">--:--</span>
+    <div id="indicador-conexion"></div>
+    <span class="crece"></span>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-equitativa">División equitativa</button>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-agregar-sub">+ Cuenta</button>
+    <button class="btn btn--salir btn--secundario btn--sm" type="button" id="btn-salir-pos">Salir</button>
+  </header>
+
+  <!-- Vista 20: Divisor de Cuentas Avanzado -->
+  <main class="pos-main" id="contenido">
+    <p class="texto-tenue texto-sm">
+      Arrastre cada plato a una cuenta, o use el botón «Mover a…». Las columnas deben sumar
+      exactamente la cuenta original antes de poder cobrar.
+    </p>
+    <div class="divisor" id="divisor"></div>
+  </main>
+
+  <!-- Modal accesible para mover un ítem (alternativa al arrastre, FSD 6.4) -->
+  <dialog id="modal-mover" aria-labelledby="titulo-mover">
+    <div class="modal__cabecera">
+      <h2 id="titulo-mover">Mover a…</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-mover" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo" id="opciones-mover"></div>
+  </dialog>
+
+  <!-- Modal para fraccionar cantidad -->
+  <dialog id="modal-fraccionar" aria-labelledby="titulo-fraccionar">
+    <div class="modal__cabecera">
+      <h2 id="titulo-fraccionar">¿Cuántas unidades mover?</h2>
+      <button class="btn btn--plano" type="button" id="btn-cerrar-fraccionar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal__cuerpo" style="text-align:center">
+      <div class="stepper" style="justify-content:center;margin:1rem 0">
+        <button class="stepper__btn" type="button" id="frac-menos">−</button>
+        <span class="stepper__valor" id="frac-valor">1</span>
+        <button class="stepper__btn" type="button" id="frac-mas">+</button>
+      </div>
+      <p class="texto-tenue texto-sm" id="frac-max"></p>
+    </div>
+    <div class="modal__pie">
+      <button class="btn btn--secundario" type="button" id="btn-cancelar-fraccionar">Cancelar</button>
+      <button class="btn btn--primario" type="button" id="btn-confirmar-fraccionar">Mover</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/caja/js/dividir.js"></script>
+</body>
+</html>

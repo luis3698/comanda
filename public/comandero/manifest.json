@@ -1,0 +1,19 @@
+{
+  "name": "SIGR Comandero",
+  "short_name": "Comandero",
+  "description": "Toma de pedidos del mesero",
+  "start_url": "/comandero/",
+  "scope": "/comandero/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/comandero/icono.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

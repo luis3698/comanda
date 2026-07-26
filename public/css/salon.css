@@ -1,0 +1,232 @@
+/* =====================================================================
+   Vista 2 — Diseñador de distribución y mapa de mesas.
+   FSD 4.1: "lienzo central (área de la zona seleccionada, con rejilla de
+   fondo) + panel lateral derecho de propiedades; pestañas superiores por zona".
+   ===================================================================== */
+
+.disenador {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* --- Aviso de solo lectura en móvil (FSD 4.1) --- */
+.aviso-movil {
+  display: none;
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--c-alerta);
+  border-radius: var(--radio-sm);
+  background: var(--c-alerta-bg);
+  color: var(--c-alerta);
+  font-size: .88rem;
+}
+
+/* --- Pestañas de zona --- */
+.zonas-barra {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.zonas-barra__lista {
+  display: flex;
+  gap: .3rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.zona-pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 40px;
+  padding: .4rem .85rem;
+  border: 1px solid var(--c-borde);
+  border-radius: 999px;
+  background: var(--c-superficie);
+  font: inherit;
+  font-weight: 550;
+  color: var(--c-texto-suave);
+  cursor: pointer;
+}
+/* La zona activa se marca con fondo, color y peso: no solo con color (6.4). */
+.zona-pestana--activa {
+  background: var(--c-primario);
+  border-color: var(--c-primario);
+  color: #fff;
+  font-weight: 650;
+}
+.zona-pestana--inactiva { opacity: .55; font-style: italic; }
+@media (hover: hover) {
+  .zona-pestana:not(.zona-pestana--activa):hover { background: var(--c-fondo); }
+}
+.zona-pestana__conteo {
+  font-size: .72rem;
+  padding: .05rem .4rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .1);
+}
+.zona-pestana--activa .zona-pestana__conteo { background: rgba(255, 255, 255, .25); }
+
+/* --- Paleta de formas --- */
+.paleta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  padding: .6rem;
+  margin-bottom: .5rem;
+  border: 1px dashed var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-fondo);
+}
+.paleta__titulo { font-size: .82rem; font-weight: 600; color: var(--c-texto-suave); }
+.paleta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 40px;
+  padding: .35rem .7rem;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font: inherit;
+  font-size: .85rem;
+  color: var(--c-texto);
+  cursor: grab;
+}
+.paleta__item:active { cursor: grabbing; }
+@media (hover: hover) {
+  .paleta__item:hover { border-color: var(--c-primario); background: var(--c-primario-suave); }
+}
+.paleta__figura {
+  width: 18px; height: 18px;
+  background: var(--c-primario);
+  flex-shrink: 0;
+}
+.paleta__figura--redonda { border-radius: 50%; }
+.paleta__figura--cuadrada { border-radius: 3px; }
+.paleta__figura--rectangular { width: 26px; height: 14px; border-radius: 3px; }
+.paleta__figura--barra { width: 26px; height: 8px; border-radius: 999px; }
+
+/* --- Lienzo ---
+   FSD 4.1: "área de la zona seleccionada, con rejilla de fondo" y
+   "snap a rejilla de 10 px". La rejilla se dibuja con un degradado repetido. */
+.lienzo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 2px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background-color: #fafcfc;
+  background-image:
+    linear-gradient(to right, rgba(15, 118, 110, .07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 118, 110, .07) 1px, transparent 1px);
+  background-size: 10px 10px;
+  overflow: hidden;
+  touch-action: none;   /* el arrastre táctil lo gestiona el JS, no el scroll */
+}
+.lienzo--soltando {
+  border-color: var(--c-primario);
+  border-style: dashed;
+  background-color: var(--c-primario-suave);
+}
+.lienzo:focus-visible { outline: 3px solid var(--c-primario); outline-offset: 2px; }
+
+.lienzo__vacio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  text-align: center;
+  color: var(--c-texto-tenue);
+  pointer-events: none;
+}
+
+/* --- Mesas en el lienzo --- */
+.mesa {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--c-primario-fuerte);
+  background: var(--c-primario-suave);
+  color: var(--c-primario-fuerte);
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+  padding: 0;
+  transition: box-shadow 90ms ease, border-color 90ms ease;
+}
+.mesa:active { cursor: grabbing; }
+.mesa--redonda { border-radius: 50%; }
+.mesa--cuadrada { border-radius: 4px; }
+.mesa--rectangular { border-radius: 4px; }
+.mesa--barra { border-radius: 999px; }
+
+.mesa--seleccionada {
+  border-color: var(--c-alerta);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px var(--c-alerta-bg);
+  z-index: 5;
+}
+.mesa:focus-visible {
+  outline: 3px solid var(--c-alerta);
+  outline-offset: 2px;
+  z-index: 5;
+}
+/* Mesa con comanda abierta: no se puede quitar del plano. Se marca con borde
+   Y con el icono de candado, nunca solo con color (6.4). */
+.mesa--ocupada {
+  border-color: var(--c-error);
+  background: var(--c-error-bg);
+  color: var(--c-error);
+}
+.mesa--nueva { border-style: dashed; }
+
+.mesa__numero { pointer-events: none; line-height: 1.1; }
+.mesa__capacidad {
+  font-size: .62rem;
+  font-weight: 600;
+  opacity: .75;
+  pointer-events: none;
+}
+.mesa__candado { font-size: .6rem; pointer-events: none; }
+
+/* --- Panel de propiedades --- */
+.propiedades { position: sticky; top: calc(var(--header-alto) + 1rem); }
+
+.mover-botones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .25rem;
+  max-width: 160px;
+  margin: 0 auto;
+}
+.mover-botones .btn { min-height: 38px; padding: .2rem; }
+.mover-botones__centro {
+  display: grid;
+  place-items: center;
+  font-size: .68rem;
+  color: var(--c-texto-tenue);
+  font-weight: 600;
+}
+
+/* =====================================================================
+   Responsivo
+   ===================================================================== */
+@media (max-width: 1100px) {
+  .disenador { grid-template-columns: 1fr; }
+  .propiedades { position: static; }
+}
+
+/* FSD 4.1 vista 2: "en móvil se muestra en modo solo lectura con aviso". */
+@media (max-width: 767px) {
+  .aviso-movil { display: block; }
+  .paleta, #ayuda-paleta, .barra-flotante { display: none !important; }
+  .lienzo { pointer-events: none; aspect-ratio: 4 / 3; }
+  .mesa { cursor: default; }
+}

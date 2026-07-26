@@ -1,0 +1,84 @@
+/* =====================================================================
+   Vista 9 — Historial de auditoría.
+   FSD 4.1: "barra de filtros + tabla cronológica descendente con timestamp,
+   usuario, acción, detalle e IP; icono de severidad por tipo de evento".
+   ===================================================================== */
+
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .75rem;
+  align-items: end;
+}
+
+/* --- Estado de la cadena de hashes --- */
+.integridad {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .7rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radio-sm);
+  border-left: 4px solid var(--c-borde);
+  background: var(--c-superficie);
+  font-size: .88rem;
+}
+.integridad--ok { border-left-color: var(--c-exito); background: var(--c-exito-bg); color: var(--c-exito); }
+.integridad--rota { border-left-color: var(--c-error); background: var(--c-error-bg); color: var(--c-error); font-weight: 600; }
+
+/* --- Evento --- */
+.evento {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+  cursor: pointer;
+  width: 100%;
+  border-left: 4px solid transparent;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--c-texto);
+  border-top: none;
+  border-right: none;
+}
+.evento:last-child { border-bottom: none; }
+@media (hover: hover) { .evento:hover { background: var(--c-fondo); } }
+
+/* La severidad se distingue por borde, icono Y texto: nunca solo por color (6.4). */
+.evento--alta  { border-left-color: var(--c-error); }
+.evento--media { border-left-color: var(--c-alerta); }
+.evento--baja  { border-left-color: var(--c-borde); }
+
+.evento__hora {
+  font-family: var(--fuente-mono);
+  font-size: .78rem;
+  color: var(--c-texto-tenue);
+  white-space: nowrap;
+  min-width: 8.5rem;
+}
+.evento__cuerpo { flex: 1; min-width: 0; }
+.evento__accion {
+  font-family: var(--fuente-mono);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--c-primario-fuerte);
+}
+.evento__detalle { font-size: .85rem; margin-top: .1rem; }
+.evento__meta { font-size: .75rem; color: var(--c-texto-tenue); margin-top: .15rem; }
+.evento__expandido {
+  margin-top: .5rem;
+  padding: .6rem;
+  border-radius: var(--radio-sm);
+  background: var(--c-fondo);
+  font-size: .8rem;
+}
+.evento__campo { display: flex; gap: .5rem; padding: .1rem 0; }
+.evento__campo strong { min-width: 7rem; color: var(--c-texto-suave); }
+
+@media (max-width: 768px) {
+  /* FSD 4.1 vista 9: "tabla a lista de tarjetas cronológicas". */
+  .evento { flex-direction: column; gap: .25rem; }
+  .evento__hora { min-width: 0; }
+}

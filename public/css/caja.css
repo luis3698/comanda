@@ -1,0 +1,300 @@
+/* =====================================================================
+   Grupo 4 — POS del Cajero (escritorio / tablet fija).
+   FSD 4: header fijo + main. Tema claro como el admin.
+   ===================================================================== */
+
+body.caja {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-fondo);
+}
+
+.pos-cab {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .6rem 1.25rem;
+  background: var(--c-primario);
+  color: #fff;
+}
+.pos-cab__marca { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
+.pos-cab__turno {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .85rem;
+  padding: .2rem .7rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+}
+.pos-cab__turno--cerrado { background: var(--c-error); }
+.pos-cab__reloj { font-family: var(--fuente-mono); font-variant-numeric: tabular-nums; }
+.pos-cab .btn { color: #fff; border-color: rgba(255,255,255,.35); background: transparent; }
+.pos-cab .conexion { font-size: .72rem; padding: .2rem .5rem; }
+.pos-cab .conexion--conectado { background: rgba(255,255,255,.2); color: #fff; }
+.pos-cab .conexion--reconectando { background: var(--c-alerta-bg); color: var(--c-alerta); }
+.pos-cab .conexion--desconectado { background: var(--c-error-bg); color: var(--c-error); }
+
+.pos-nav { display: flex; gap: .3rem; margin-left: auto; }
+.pos-nav__item {
+  min-height: 40px;
+  padding: .4rem 1rem;
+  border-radius: var(--radio-sm);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: .9rem;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.pos-nav__item--activo { background: rgba(255,255,255,.22); }
+
+.pos-main { flex: 1; padding: 1.25rem; }
+
+/* --- Estado sin turno --- */
+.sin-turno {
+  max-width: 480px;
+  margin: 3rem auto;
+  text-align: center;
+}
+
+/* --- Teclado numérico (compartido) --- */
+.teclado-pos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
+  max-width: 320px;
+}
+.teclado-pos__tecla {
+  min-height: 60px;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.teclado-pos__tecla:active { background: var(--c-primario-suave); transform: scale(.97); }
+.teclado-pos__tecla--accion { font-size: 1rem; background: var(--c-fondo); color: var(--c-texto-suave); }
+.teclado-pos__tecla--ancha { grid-column: span 2; }
+
+.visor-monto {
+  font-family: var(--fuente-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: right;
+  padding: .6rem 1rem;
+  border: 2px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  margin-bottom: .75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+   Vista 18 — Panel de cuentas y mesas
+   ===================================================================== */
+.cuentas-lista { display: flex; flex-direction: column; gap: .5rem; }
+.cuenta-fila {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  background: var(--c-superficie);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--c-texto);
+  width: 100%;
+}
+@media (hover: hover) { .cuenta-fila:hover { border-color: var(--c-primario); box-shadow: var(--sombra); } }
+
+/* Pre-cuenta solicitada: amarillo parpadeante (FSD 4.4 vista 18). */
+.cuenta-fila--precuenta {
+  border-color: var(--c-alerta);
+  border-left-width: 5px;
+  background: var(--c-alerta-bg);
+  animation: parpadeo-precuenta 1.6s ease-in-out infinite;
+}
+@keyframes parpadeo-precuenta {
+  0%, 100% { background: var(--c-alerta-bg); }
+  50% { background: #fde68a; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cuenta-fila--precuenta { animation: none; }
+}
+
+.cuenta-fila__mesa {
+  min-width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radio-sm);
+  background: var(--c-primario-suave);
+  color: var(--c-primario-fuerte);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+.cuenta-fila__info { flex: 1; }
+.cuenta-fila__mesero { font-weight: 600; }
+.cuenta-fila__meta { font-size: .82rem; color: var(--c-texto-tenue); }
+.cuenta-fila__accion { font-weight: 700; color: var(--c-primario); }
+
+/* =====================================================================
+   Vista 19 — Terminal de cobro (tres columnas)
+   ===================================================================== */
+.cobro {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+.cobro__col { background: var(--c-superficie); border: 1px solid var(--c-borde-suave); border-radius: var(--radio); }
+.cobro__col-cab { padding: .85rem 1rem; border-bottom: 1px solid var(--c-borde-suave); font-weight: 700; }
+.cobro__col-cuerpo { padding: 1rem; }
+
+.desglose-linea {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--c-borde-suave);
+  font-size: .9rem;
+}
+.desglose-linea:last-of-type { border-bottom: none; }
+.desglose-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 0 .25rem;
+  margin-top: .5rem;
+  border-top: 2px solid var(--c-borde);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--c-primario-fuerte);
+}
+.desglose-sub { display: flex; justify-content: space-between; font-size: .88rem; color: var(--c-texto-suave); padding: .2rem 0; }
+
+.metodos-pago { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
+.metodo-btn {
+  min-height: 52px;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+.metodo-btn--activo { border-color: var(--c-primario); background: var(--c-primario-suave); border-width: 2px; }
+
+.propina-botones { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.propina-btn {
+  flex: 1;
+  min-width: 60px;
+  min-height: 44px;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.propina-btn--activa { border-color: var(--c-primario); background: var(--c-primario-suave); }
+
+.pago-aplicado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .7rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio-sm);
+  margin-bottom: .35rem;
+  font-size: .88rem;
+}
+.saldo {
+  padding: .75rem;
+  border-radius: var(--radio-sm);
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin: .5rem 0;
+}
+.saldo--pendiente { background: var(--c-alerta-bg); color: var(--c-alerta); }
+.saldo--completo { background: var(--c-exito-bg); color: var(--c-exito); }
+.saldo--exceso { background: var(--c-error-bg); color: var(--c-error); }
+
+/* =====================================================================
+   Vista 20 — Divisor de cuentas
+   ===================================================================== */
+.divisor { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; align-items: start; }
+.subcuenta {
+  flex-shrink: 0;
+  width: 280px;
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+}
+.subcuenta--origen { border-color: var(--c-primario); border-width: 2px; }
+.subcuenta--destino-drag { border-color: var(--c-primario); background: var(--c-primario-suave); }
+.subcuenta__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .7rem .85rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+  font-weight: 700;
+}
+.subcuenta__cuerpo { padding: .5rem; min-height: 120px; }
+.subcuenta__total { padding: .7rem .85rem; border-top: 1px solid var(--c-borde-suave); font-weight: 700; text-align: right; }
+
+.item-divisible {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  margin-bottom: .35rem;
+  background: var(--c-superficie);
+  cursor: grab;
+  font-size: .85rem;
+}
+.item-divisible:active { cursor: grabbing; }
+.item-divisible__cant {
+  min-width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radio-sm);
+  background: var(--c-primario-suave);
+  color: var(--c-primario-fuerte);
+  font-weight: 700;
+  font-size: .8rem;
+}
+.item-divisible__nombre { flex: 1; }
+
+/* =====================================================================
+   Responsivo
+   ===================================================================== */
+@media (max-width: 1100px) {
+  /* FSD 4.4 vista 19: en tablet, columnas 1 y 2 visibles, la 3 como barra inferior. */
+  .cobro { grid-template-columns: 1fr 1fr; }
+  .cobro__col--pagos { grid-column: 1 / -1; }
+}
+@media (max-width: 768px) {
+  .cobro { grid-template-columns: 1fr; }
+  .pos-nav__item span { display: none; }
+}

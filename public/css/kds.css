@@ -1,0 +1,315 @@
+/* =====================================================================
+   Grupo 3 — KDS Cocina y Barra (tablet / pantalla, modo oscuro).
+   FSD 4.3: "fondo #111, texto >= 24 px de alto contraste (relación >= 7:1),
+   legible a 1-2 m; botones táctiles gigantes (>= 80 px de alto)".
+   ===================================================================== */
+
+:root {
+  --kds-fondo: #111111;
+  --kds-superficie: #1c1c1e;
+  --kds-superficie-alta: #2a2a2e;
+  --kds-borde: #3a3a3e;
+  --kds-texto: #f5f5f7;
+  --kds-texto-tenue: #a1a1aa;
+  /* Colores del cronómetro (FSD 4.3 vista 15). Todos superan 7:1 sobre #111. */
+  --kds-verde: #4ade80;
+  --kds-ambar: #fbbf24;
+  --kds-rojo: #f87171;
+  --kds-azul: #60a5fa;
+}
+
+body.kds {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--kds-fondo);
+  color: var(--kds-texto);
+  /* FSD 4.3: texto grande, legible a 1-2 m. */
+  font-size: 18px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* --- Header --- */
+.kds-cab {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .75rem 1.25rem;
+  background: var(--kds-superficie);
+  border-bottom: 2px solid var(--kds-borde);
+}
+.kds-cab__titulo { font-size: 1.5rem; font-weight: 800; letter-spacing: .02em; }
+.kds-cab__estacion {
+  padding: .2rem .75rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.kds-cab__estacion--cocina { background: #422006; color: var(--kds-ambar); }
+.kds-cab__estacion--barra { background: #1e3a5f; color: var(--kds-azul); }
+/* Conmutador de estación: los botones se ven atenuados hasta que están activos. */
+.kds-cab__estaciones { display: flex; gap: .4rem; }
+.kds-cab__estaciones .kds-cab__estacion {
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: .45;
+  transition: opacity .15s, border-color .15s;
+}
+.kds-cab__estaciones .kds-cab__estacion:hover { opacity: .8; }
+.kds-cab__estaciones .kds-estacion-activa { opacity: 1; border-color: currentColor; }
+.kds-cab__reloj { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.kds-cab .conexion { font-size: .9rem; padding: .25rem .6rem; }
+.kds-cab .conexion--conectado { background: #14532d; color: var(--kds-verde); }
+.kds-cab .conexion--reconectando { background: #422006; color: var(--kds-ambar); }
+.kds-cab .conexion--desconectado { background: #450a0a; color: var(--kds-rojo); }
+
+.kds-cab__tabs { display: flex; gap: .5rem; margin-left: auto; }
+.kds-tab {
+  min-height: 52px;
+  padding: .5rem 1.25rem;
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+  background: var(--kds-superficie);
+  color: var(--kds-texto-tenue);
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kds-tab--activo { background: var(--kds-texto); color: var(--kds-fondo); border-color: var(--kds-texto); }
+
+.kds-boton-salir {
+  min-height: 52px;
+  padding: .5rem 1rem;
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+  background: transparent;
+  color: var(--kds-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* --- Contenido --- */
+.kds-main { flex: 1; padding: 1rem; overflow-x: auto; }
+
+/* --- Vista 15: carrusel de tarjetas verticales --- */
+.kds-carrusel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(300px, 340px);
+  gap: 1rem;
+  height: 100%;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+/* En monitores grandes se ven varias tarjetas; el auto-flow ya lo permite. */
+
+.comanda-card {
+  background: var(--kds-superficie);
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+/* Borde de la tarjeta según el cronómetro. */
+.comanda-card--verde { border-color: var(--kds-verde); }
+.comanda-card--ambar { border-color: var(--kds-ambar); }
+.comanda-card--rojo { border-color: var(--kds-rojo); }
+
+/* Flash del borde al llegar una comanda nueva (FSD 4.3 vista 15). */
+@keyframes flash-borde {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px var(--kds-verde); }
+}
+.comanda-card--nueva { animation: flash-borde 1s ease-in-out 3; }
+
+.comanda-card__cab {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  background: var(--kds-superficie-alta);
+  border-bottom: 1px solid var(--kds-borde);
+}
+.comanda-card__mesa { font-size: 1.5rem; font-weight: 800; }
+.comanda-card__mesa--boton {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.comanda-card__mesa--boton:hover { text-decoration: underline; }
+.comanda-card__mesero { font-size: .95rem; color: var(--kds-texto-tenue); }
+.comanda-card__crono {
+  margin-left: auto;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.comanda-card__crono--verde { color: var(--kds-verde); }
+.comanda-card__crono--ambar { color: var(--kds-ambar); }
+.comanda-card__crono--rojo { color: var(--kds-rojo); }
+
+.comanda-card__cuerpo { padding: .5rem; overflow-y: auto; flex: 1; }
+
+.kds-linea {
+  padding: .6rem .5rem;
+  border-bottom: 1px solid var(--kds-borde);
+}
+.kds-linea:last-child { border-bottom: none; }
+.kds-linea--preparando { background: rgba(96, 165, 250, .12); border-radius: var(--radio-sm); }
+.kds-linea__titulo { display: flex; align-items: baseline; gap: .5rem; }
+.kds-linea__cant { font-size: 1.5rem; font-weight: 800; color: var(--kds-ambar); }
+.kds-linea__nombre { font-size: 1.25rem; font-weight: 700; }
+.kds-linea__mods {
+  font-size: 1rem;
+  color: var(--kds-texto-tenue);
+  margin-top: .15rem;
+  padding-left: .25rem;
+}
+/* FSD 4.3 vista 15: "las notas de alergia se resaltan en rojo con icono ⚠". */
+.kds-linea__notas {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .35rem;
+  padding: .35rem .5rem;
+  background: #450a0a;
+  color: var(--kds-rojo);
+  border-radius: var(--radio-sm);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.comanda-card__pie { padding: .5rem; border-top: 1px solid var(--kds-borde); }
+/* Botón gigante de avance (FSD 4.3: >= 80 px de alto). */
+.kds-boton-gigante {
+  width: 100%;
+  min-height: 80px;
+  border: none;
+  border-radius: var(--radio);
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--kds-fondo);
+}
+.kds-boton-gigante--preparar { background: var(--kds-azul); }
+.kds-boton-gigante--listo { background: var(--kds-verde); }
+.kds-boton-gigante:active { transform: scale(.98); }
+
+/* Animación de archivado al marcar "Listo". */
+@keyframes archivar {
+  to { opacity: 0; transform: translateY(-20px) scale(.9); }
+}
+.comanda-card--archivando { animation: archivar .4s ease-in forwards; }
+
+/* --- Vista 16: monitor consolidado --- */
+.kds-produccion {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.prod-card {
+  background: var(--kds-superficie);
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+  padding: 1rem;
+  cursor: pointer;
+}
+.prod-card__cant { font-size: 3.5rem; font-weight: 900; line-height: 1; color: var(--kds-ambar); }
+.prod-card__nombre { font-size: 1.4rem; font-weight: 700; margin-top: .25rem; }
+.prod-card__mods { margin-top: .5rem; font-size: 1rem; color: var(--kds-texto-tenue); }
+.prod-card__detalle { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--kds-borde); font-size: .95rem; }
+
+/* --- Vista 17: control de stock --- */
+.kds-stock-buscador {
+  width: 100%;
+  min-height: 60px;
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+  background: var(--kds-superficie);
+  color: var(--kds-texto);
+  font: inherit;
+  font-size: 1.2rem;
+}
+.stock-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: .6rem;
+  background: var(--kds-superficie);
+  border: 2px solid var(--kds-borde);
+  border-radius: var(--radio);
+}
+.stock-item--agotado { background: #2a1215; border-color: var(--kds-rojo); }
+.stock-item__nombre { flex: 1; font-size: 1.3rem; font-weight: 700; }
+.stock-item__cat { font-size: .95rem; color: var(--kds-texto-tenue); }
+.stock-item__cola { font-size: .95rem; color: var(--kds-ambar); font-weight: 700; }
+
+/* Switch grande (FSD 4.3 vista 17: >= 56 px). */
+.switch-kds {
+  position: relative;
+  width: 96px;
+  height: 56px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.switch-kds input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.switch-kds__pista {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--kds-verde);
+  transition: background .15s ease;
+}
+.switch-kds__perilla {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .15s ease;
+}
+.switch-kds input:not(:checked) ~ .switch-kds__pista { background: var(--kds-rojo); }
+.switch-kds input:checked ~ .switch-kds__perilla { transform: translateX(40px); }
+.switch-kds__texto {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--kds-fondo);
+}
+.switch-kds input:checked ~ .switch-kds__texto--si { left: 10px; }
+.switch-kds input:not(:checked) ~ .switch-kds__texto--si { display: none; }
+.switch-kds input:checked ~ .switch-kds__texto--no { display: none; }
+.switch-kds input:not(:checked) ~ .switch-kds__texto--no { right: 10px; }
+
+.kds-vacio {
+  display: grid;
+  place-items: center;
+  height: 60vh;
+  text-align: center;
+  color: var(--kds-texto-tenue);
+  font-size: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comanda-card--nueva, .comanda-card--archivando { animation: none; }
+}

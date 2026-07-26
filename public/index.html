@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Iniciar sesión · SIGR</title>
+  <meta name="description" content="Sistema Integral de Gestión para Restaurantes">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body class="pagina-login">
+  <main class="login" id="contenido">
+    <div class="login__marca">
+      <span class="login__logo" aria-hidden="true">🍽</span>
+      <h1>SIGR</h1>
+      <p class="texto-tenue texto-sm">Sistema Integral de Gestión para Restaurantes</p>
+    </div>
+
+    <!-- FSD 4: "Login común: correo + contraseña (backoffice) o PIN de 4 dígitos
+         / tarjeta RFID (dispositivos operativos), con teclado numérico". -->
+    <div class="tarjeta login__tarjeta">
+      <div role="tablist" class="pestanas" aria-label="Forma de acceso">
+        <button role="tab" id="tab-backoffice" aria-controls="panel-backoffice"
+                aria-selected="true" class="pestana pestana--activa" type="button">
+          Backoffice
+        </button>
+        <button role="tab" id="tab-operativo" aria-controls="panel-operativo"
+                aria-selected="false" class="pestana" type="button">
+          Dispositivo
+        </button>
+      </div>
+
+      <!-- Acceso de backoffice: correo + contraseña -->
+      <div id="panel-backoffice" role="tabpanel" aria-labelledby="tab-backoffice" class="login__panel">
+        <form id="form-backoffice" novalidate>
+          <div class="campo">
+            <label class="campo__etiqueta" for="correo">
+              Correo <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="correo" name="correo" type="email"
+                   autocomplete="username" required autofocus
+                   aria-describedby="error-correo">
+            <span class="campo__error" id="error-correo" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="password">
+              Contraseña <span class="campo__requerido" aria-hidden="true">*</span>
+            </label>
+            <input class="campo__control" id="password" name="password" type="password"
+                   autocomplete="current-password" required
+                   aria-describedby="error-password">
+            <span class="campo__error" id="error-password" role="alert"></span>
+          </div>
+
+          <button class="btn btn--primario btn--bloque" type="submit" id="btn-entrar">
+            Iniciar sesión
+          </button>
+        </form>
+      </div>
+
+      <!-- Acceso operativo: documento + PIN con teclado numérico -->
+      <div id="panel-operativo" role="tabpanel" aria-labelledby="tab-operativo"
+           class="login__panel oculto">
+        <form id="form-operativo" novalidate>
+          <div class="campo">
+            <label class="campo__etiqueta" for="documento">Documento o código de empleado</label>
+            <input class="campo__control" id="documento" name="documento"
+                   inputmode="text" autocomplete="off" aria-describedby="error-documento">
+            <span class="campo__error" id="error-documento" role="alert"></span>
+          </div>
+
+          <div class="campo">
+            <label class="campo__etiqueta" for="pin">PIN de 4 dígitos</label>
+            <input class="campo__control pin-visor" id="pin" name="pin" type="password"
+                   inputmode="numeric" pattern="\d{4}" maxlength="4"
+                   autocomplete="off" readonly aria-describedby="error-pin">
+            <span class="campo__error" id="error-pin" role="alert"></span>
+          </div>
+
+          <!-- Teclado en pantalla (FSD 4 y 6.3: objetivos táctiles grandes) -->
+          <div class="teclado" id="teclado" role="group" aria-label="Teclado numérico">
+            <button class="teclado__tecla" type="button" data-tecla="1">1</button>
+            <button class="teclado__tecla" type="button" data-tecla="2">2</button>
+            <button class="teclado__tecla" type="button" data-tecla="3">3</button>
+            <button class="teclado__tecla" type="button" data-tecla="4">4</button>
+            <button class="teclado__tecla" type="button" data-tecla="5">5</button>
+            <button class="teclado__tecla" type="button" data-tecla="6">6</button>
+            <button class="teclado__tecla" type="button" data-tecla="7">7</button>
+            <button class="teclado__tecla" type="button" data-tecla="8">8</button>
+            <button class="teclado__tecla" type="button" data-tecla="9">9</button>
+            <button class="teclado__tecla teclado__tecla--accion" type="button"
+                    data-accion="limpiar" aria-label="Limpiar PIN">C</button>
+            <button class="teclado__tecla" type="button" data-tecla="0">0</button>
+            <button class="teclado__tecla teclado__tecla--accion" type="button"
+                    data-accion="borrar" aria-label="Borrar último dígito">⌫</button>
+          </div>
+
+          <button class="btn btn--primario btn--bloque" type="submit" id="btn-entrar-pin">
+            Entrar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <p class="login__pie texto-tenue texto-sm">
+      Ambiente de demostración · Usuarios: admin@sigr.local / Admin123! ·
+      mesero CC1004 / PIN 4444
+    </p>
+  </main>
+
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>

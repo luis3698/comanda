@@ -1,0 +1,97 @@
+/* =====================================================================
+   Vista 7 — Proveedores, compras e inventario.
+   FSD 4.1: "Existencias (kárdex por insumo con stock actual, mínimo y
+   semáforo de estado)".
+   ===================================================================== */
+
+/* --- Semáforo de stock ---
+   Cada estado lleva icono y texto, no solo color (FSD 6.4). */
+.semaforo {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.semaforo--normal   { background: var(--c-exito-bg);  color: var(--c-exito); }
+.semaforo--critico  { background: var(--c-alerta-bg); color: var(--c-alerta); }
+.semaforo--negativo { background: var(--c-error-bg);  color: var(--c-error); }
+
+.fila-critica { background: var(--c-alerta-bg); }
+.fila-negativa { background: var(--c-error-bg); }
+
+/* --- Líneas de compra --- */
+.linea-compra {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: .5rem;
+  align-items: center;
+  padding: .5rem;
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio-sm);
+  margin-bottom: .4rem;
+  background: var(--c-fondo);
+}
+.linea-compra__subtotal {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: .85rem;
+}
+
+.desglose-total-compra {
+  margin-top: .75rem;
+  padding: .75rem;
+  border-radius: var(--radio-sm);
+  background: var(--c-primario-suave);
+  color: var(--c-primario-fuerte);
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Kárdex --- */
+.kardex-mov {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .5rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+  font-size: .85rem;
+}
+.kardex-mov:last-child { border-bottom: none; }
+.kardex-mov__cantidad {
+  min-width: 5rem;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Entrada y salida se distinguen por signo además de color (6.4). */
+.kardex-mov__cantidad--entrada { color: var(--c-exito); }
+.kardex-mov__cantidad--salida  { color: var(--c-error); }
+.kardex-mov__tipo {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: .1rem .4rem;
+  border-radius: 3px;
+  background: var(--c-borde-suave);
+  color: var(--c-texto-suave);
+}
+.kardex-mov__info { flex: 1; min-width: 0; }
+.kardex-mov__fecha { font-size: .72rem; color: var(--c-texto-tenue); }
+
+.kardex-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .linea-compra { grid-template-columns: 1fr auto; }
+}

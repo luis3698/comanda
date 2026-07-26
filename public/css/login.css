@@ -1,0 +1,111 @@
+/* =====================================================================
+   Pantalla de login. Sirve a las cuatro interfaces, asi que funciona igual
+   en un escritorio del backoffice que en la tablet del comandero.
+   ===================================================================== */
+
+.pagina-login {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1rem;
+  background: linear-gradient(160deg, #0f766e 0%, #134e4a 100%);
+}
+
+.login {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login__marca {
+  text-align: center;
+  margin-bottom: 1.25rem;
+  color: #fff;
+}
+.login__logo { font-size: 2.5rem; display: block; line-height: 1; }
+.login__marca h1 { color: #fff; margin: .4rem 0 .1rem; letter-spacing: .02em; }
+.login__marca .texto-tenue { color: rgba(255, 255, 255, .8); }
+
+.login__tarjeta { overflow: hidden; }
+.login__panel { padding: 1.25rem; }
+
+.login__pie {
+  margin-top: 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, .75);
+}
+
+/* --- Pestañas de forma de acceso --- */
+.pestanas {
+  display: flex;
+  border-bottom: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+}
+.pestana {
+  flex: 1;
+  min-height: var(--target-tactil);
+  padding: .75rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-texto-tenue);
+  cursor: pointer;
+}
+/* La pestaña activa se marca con color Y con peso de fuente y borde: no
+   depende solo del color (FSD 6.4). */
+.pestana--activa {
+  color: var(--c-primario);
+  border-bottom-color: var(--c-primario);
+  background: var(--c-superficie);
+}
+@media (hover: hover) {
+  .pestana:not(.pestana--activa):hover { background: var(--c-borde-suave); }
+}
+
+/* --- Visor del PIN --- */
+.pin-visor {
+  text-align: center;
+  font-size: 1.6rem;
+  letter-spacing: .6em;
+  text-indent: .6em;   /* compensa el letter-spacing final para centrar */
+  font-family: var(--fuente-mono);
+  caret-color: transparent;
+}
+
+/* --- Teclado numérico ---
+   FSD 6.3: los objetivos táctiles deben ser >= 48 px; aquí se usan 56 px
+   porque se opera con prisa y a menudo con una sola mano. */
+.teclado {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.teclado__tecla {
+  min-height: 56px;
+  border: 1px solid var(--c-borde);
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--c-texto);
+  cursor: pointer;
+  transition: background-color 60ms ease, transform 60ms ease;
+}
+/* Retroalimentación táctil visible por debajo de 100 ms (FSD 4). */
+.teclado__tecla:active {
+  background: var(--c-primario-suave);
+  transform: scale(.96);
+}
+.teclado__tecla--accion {
+  font-size: 1rem;
+  color: var(--c-texto-suave);
+  background: var(--c-fondo);
+}
+@media (hover: hover) {
+  .teclado__tecla:hover { background: var(--c-fondo); }
+  .teclado__tecla--accion:hover { background: var(--c-borde-suave); }
+}

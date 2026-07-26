@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auditoría · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/auditoria.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Vista 9: Historial de Auditoría y Logs de Seguridad — /admin/auditoria
+       FSD 4.1: "vista de solo lectura. No existe ningún control de edición o
+       borrado." Esta página no tiene un solo botón que escriba. -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <div class="principal__titulo">
+        <h1>Auditoría</h1>
+        <span class="insignia insignia--neutra">Solo lectura</span>
+      </div>
+      <p class="texto-tenue texto-sm">
+        Registro inalterable de las acciones de riesgo. Ni esta pantalla ni la aplicación
+        pueden modificarlo: el motor de base de datos lo impide.
+      </p>
+    </div>
+
+    <!-- Estado de la cadena de hashes -->
+    <div class="integridad" id="integridad" role="status" aria-live="polite">
+      <span class="cargando" aria-hidden="true"></span> Verificando la integridad del registro…
+    </div>
+
+    <!-- Barra de filtros -->
+    <div class="tarjeta" style="margin-bottom:1rem">
+      <div class="tarjeta__cuerpo filtros">
+        <div class="campo" style="margin:0">
+          <label class="campo__etiqueta" for="f-desde">Desde</label>
+          <input class="campo__control" id="f-desde" type="date">
+        </div>
+        <div class="campo" style="margin:0">
+          <label class="campo__etiqueta" for="f-hasta">Hasta</label>
+          <input class="campo__control" id="f-hasta" type="date">
+        </div>
+        <div class="campo" style="margin:0">
+          <label class="campo__etiqueta" for="f-usuario">Usuario</label>
+          <select class="campo__control" id="f-usuario"><option value="">Todos</option></select>
+        </div>
+        <div class="campo" style="margin:0">
+          <label class="campo__etiqueta" for="f-accion">Acción</label>
+          <select class="campo__control" id="f-accion"><option value="">Todas</option></select>
+        </div>
+        <div class="fila" style="gap:.4rem;align-items:flex-end">
+          <button class="btn btn--primario" type="button" id="btn-filtrar">Filtrar</button>
+          <button class="btn btn--secundario" type="button" id="btn-limpiar">Limpiar</button>
+          <button class="btn btn--secundario" type="button" id="btn-csv">Exportar CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta__cabecera">
+        <h2>Eventos</h2>
+        <span class="texto-tenue texto-sm" id="conteo-eventos">—</span>
+      </div>
+      <div id="eventos"></div>
+      <div class="paginacion" id="paginacion" style="justify-content:center"></div>
+    </div>
+  </main>
+
+  <script type="module" src="/admin/js/auditoria.js"></script>
+</body>
+</html>

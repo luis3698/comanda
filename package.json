@@ -1,0 +1,37 @@
+{
+  "name": "sigr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SIGR — Sistema Integral de Gestion para Restaurantes. Implementacion del FSD v1.1.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"tests/aceptacion/**/*.test.js\"",
+    "test:seguridad": "node --test --test-concurrency=1 \"tests/seguridad/**/*.test.js\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/**/*.test.js\"",
+    "test:carga": "node tests/carga/carga.mjs",
+    "test:todo": "npm test && npm run test:e2e && npm run test:seguridad",
+    "hash": "node scripts/hash.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "multer": "^2.2.0",
+    "mysql2": "^3.11.5",
+    "pdfkit": "^0.19.1",
+    "ws": "^8.18.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  },
+  "comentarios": {
+    "overrides": "exceljs arrastra uuid 8.3.2, con un aviso de seguridad (GHSA-w5hq-g745-h8pq: falta de comprobacion de limites en v3/v5/v6 cuando se pasa un buffer). exceljs solo llama a uuid.v4() sin argumentos, asi que la ruta vulnerable no es alcanzable; aun asi se fuerza la version parcheada en vez de degradar exceljs a la 3.4.0, que era el 'arreglo' que proponia npm audit y habria roto la exportacion a Excel. Verificado que la exportacion sigue funcionando con uuid 11."
+  }
+}

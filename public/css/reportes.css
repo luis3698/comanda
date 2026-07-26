@@ -1,0 +1,65 @@
+/* =====================================================================
+   Vista 10 — Centro de reportes y exportación.
+   FSD 4.1: "panel izquierdo con catálogo de reportes; área principal con
+   filtros avanzados + vista previa en tabla/gráfica + botones Exportar".
+   ===================================================================== */
+
+.reportes {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.reportes-lista { padding: .5rem; display: flex; flex-direction: column; gap: .2rem; }
+.reporte-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: var(--target-tactil);
+  padding: .6rem .7rem;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--c-texto);
+  cursor: pointer;
+}
+.reporte-item--activo {
+  background: var(--c-primario-suave);
+  border-color: var(--c-primario);
+  font-weight: 650;
+}
+@media (hover: hover) {
+  .reporte-item:not(.reporte-item--activo):hover { background: var(--c-fondo); }
+}
+.reporte-item__icono { font-size: 1.1rem; }
+
+/* Fila de totales de la vista previa. Debe verse claramente distinta de los
+   datos: es lo que el contador compara contra el archivo exportado. */
+.tabla tfoot td {
+  font-weight: 800;
+  background: var(--c-primario-suave);
+  color: var(--c-primario-fuerte);
+  border-top: 2px solid var(--c-primario);
+}
+
+.celda-dinero, .celda-entero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.generando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  padding: 2.5rem 1rem;
+  color: var(--c-texto-tenue);
+}
+
+@media (max-width: 900px) {
+  .reportes { grid-template-columns: 1fr; }
+}
