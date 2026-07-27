@@ -46,8 +46,17 @@ services:
       DB_USER: ${DB_USER:-sigr_app}
       DB_PASSWORD: ${DB_PASSWORD:-sigr_app_dev}
       TZ: ${TZ:-America/Bogota}
+    # Las imagenes de los platos son lo unico que la aplicacion escribe en disco.
+    # Sin este volumen viven dentro del contenedor, y un "up --build" lo recrea:
+    # los archivos desaparecen mientras la base sigue apuntando a /uploads/xxx.jpg,
+    # asi que la carta entera queda con imagenes rotas y sin forma de recuperarlas.
+    # Docker inicializa el volumen con el contenido y los permisos del directorio
+    # de la imagen, que el Dockerfile ya deja como node:node.
+    volumes:
+      - sigr_imagenes:/app/public/uploads
     ports:
       - "${PORT_HOST:-3000}:3000"
 
 volumes:
   sigr_datos:
+  sigr_imagenes:

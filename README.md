@@ -344,7 +344,21 @@ docker compose down -v && docker compose up -d --build
 ```
 
 > [!CAUTION]
-> `-v` elimina el volumen `sigr_datos`. **No hay vuelta atrás.**
+> `-v` elimina **los dos volúmenes**: `sigr_datos` (la base) y `sigr_imagenes` (las fotos
+> de los platos). **No hay vuelta atrás.** Si solo quieres reiniciar la base y conservar
+> las imágenes, usa [`npm run bd:reiniciar`](#-npm-run-bdreiniciar--dejarla-como-recién-instalada).
+
+### Dónde se guardan los datos
+
+Nada que quieras conservar vive dentro de los contenedores:
+
+| Volumen | Contiene | Se borra con |
+|---|---|---|
+| `sigr_datos` | Base de datos MySQL | `docker compose down -v` |
+| `sigr_imagenes` | Imágenes de los platos (`public/uploads`) | `docker compose down -v` |
+
+Por eso `docker compose up -d --build` se puede repetir sin miedo: recrea los contenedores,
+pero los volúmenes siguen en su sitio.
 
 ---
 
