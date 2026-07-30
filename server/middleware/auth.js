@@ -14,7 +14,8 @@
  * refleja. Con un token autocontenido habria que esperar a que expirara.
  */
 import crypto from 'node:crypto';
-import { consultar, consultarUno, pool } from '../db.js';
+import { consultarUno, pool } from '../db.js';
+import { permisosDeRol } from '../servicios/permisosRol.js';
 import { errores } from './errores.js';
 
 export const COOKIE_SESION = 'sigr_sesion';
@@ -70,6 +71,37 @@ export function opcionesCookie() {
 }
 
 /**
+ * Cada cuantos minutos se reescribe `ultima_actividad`.
+ *
+ * Antes se escribia en CADA peticion. Con el KDS y varios comanderos abiertos
+ * eso es un UPDATE por peticion sobre la misma fila, y todos escriben
+ * practicamente el mismo valor. El dato solo se usa para la regla de los 10
+ * minutos de inactividad del FSD 5.1, asi que una resolucion de un minuto lo
+ * respeta de sobra: peor caso, la sesion parece un minuto mas inactiva de lo
+ * que esta, muy lejos del umbral.
+ */
+const REFRESCO_ACTIVIDAD_MIN = 1;
+
+/**
+ * Rutas que se saltan la carga de sesion.
+ *
+ * `cargarSesion` estaba montado sobre TODA peticion, incluidas las de
+ * public/: cada hoja de estilos, cada modulo JS y cada icono pagaba dos SELECT
+ * y un UPDATE. Cargar una pantalla del backoffice son mas de veinte archivos,
+ * asi que abrirla costaba unas sesenta operaciones de base de datos ANTES de
+ * pedir el primer dato de verdad.
+ *
+ * Ningun estatico consulta req.usuario -- express.static sirve el archivo tal
+ * cual y la autorizacion vive en la API --, asi que saltarselo no cambia nada
+ * de lo que se ve. Lo unico que se sirve desde disco y podria ser sensible son
+ * las imagenes de los platos, que ya son publicas por diseño (la carta de la
+ * app las muestra sin sesion).
+ */
+function necesitaSesion(req) {
+  return req.path.startsWith('/api/');
+}
+
+/**
  * Carga la sesion si la cookie es valida. NO rechaza si no hay sesion: eso lo
  * decide requiereAutenticacion. Asi las rutas publicas (login) pueden convivir
  * con las protegidas.
@@ -78,6 +110,8 @@ export function opcionesCookie() {
  */
 export async function cargarSesion(req, _res, next) {
   try {
+    if (!necesitaSesion(req)) return next();
+
     const idSesion = req.cookies?.[COOKIE_SESION];
     if (!idSesion) return next();
 
@@ -109,14 +143,12 @@ export async function cargarSesion(req, _res, next) {
     }
 
     // Permisos releidos en cada peticion (5.1): un cambio en la matriz surte
-    // efecto de inmediato, sin esperar a que la sesion expire.
-    const filasPermisos = await consultar(
-      `SELECT p.codigo
-         FROM rol_permiso rp
-         JOIN permiso p ON p.id_permiso = rp.id_permiso
-        WHERE rp.id_rol = ?`,
-      [fila.id_rol]
-    );
+    // efecto de inmediato, sin esperar a que la sesion expire. La lectura pasa
+    // por servicios/permisosRol.js, que la resuelve en memoria y se invalida
+    // cuando alguien edita la matriz: la garantia del FSD se mantiene y se
+    // ahorra un JOIN por peticion. Lo que SI se relee siempre de la base es el
+    // rol del usuario y si sigue activo, arriba.
+    const permisos = await permisosDeRol(fila.id_rol);
 
     req.usuario = {
       id: fila.id_usuario,
@@ -124,7 +156,7 @@ export async function cargarSesion(req, _res, next) {
       correo: fila.correo,
       idRol: fila.id_rol,
       rol: fila.rol,
-      permisos: new Set(filasPermisos.map((f) => f.codigo)),
+      permisos,
       sesion: {
         id: fila.id_sesion,
         tipoAcceso: fila.tipo_acceso,
@@ -133,11 +165,14 @@ export async function cargarSesion(req, _res, next) {
       },
     };
 
-    // Refresco de actividad. Se hace sin await bloqueante del flujo para no
-    // sumar latencia a cada peticion; un fallo aqui no debe tumbar la request.
-    pool
-      .execute('UPDATE sesion SET ultima_actividad = NOW() WHERE id_sesion = ?', [idSesion])
-      .catch((e) => console.error('[auth] no se pudo refrescar la actividad de la sesion:', e.message));
+    // Refresco de actividad. Sin await bloqueante del flujo para no sumar
+    // latencia a cada peticion; un fallo aqui no debe tumbar la request. Y solo
+    // si de verdad hay algo que actualizar: ver REFRESCO_ACTIVIDAD_MIN.
+    if (Number(fila.minutos_inactivo) >= REFRESCO_ACTIVIDAD_MIN) {
+      pool
+        .execute('UPDATE sesion SET ultima_actividad = NOW() WHERE id_sesion = ?', [idSesion])
+        .catch((e) => console.error('[auth] no se pudo refrescar la actividad de la sesion:', e.message));
+    }
 
     return next();
   } catch (error) {

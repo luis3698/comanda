@@ -19,6 +19,8 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errores.js';
 import { obtenerTesela, cabecerasTesela } from '../servicios/teselas.js';
+import { direccionDe } from '../servicios/geocodificacion.js';
+import { limitar } from '../middleware/limite.js';
 
 const router = Router();
 
@@ -46,6 +48,48 @@ router.get('/teselas/:z/:x/:y', asyncHandler(async (req, res) => {
 
   res.set(cabecerasTesela());
   return res.send(buffer);
+}));
+
+/**
+ * Limite propio para la geocodificacion, mas estrecho que el del resto.
+ *
+ * Las teselas se cachean en disco y una vez descargadas no cuestan nada, pero
+ * cada direccion NO cacheada es una llamada a un servicio publico que solo
+ * admite una por segundo en total. 30 por minuto y por IP da de sobra para
+ * alguien moviendo el pin -- la app ademas espera a que suelte antes de
+ * preguntar -- y evita que un cliente en bucle agote la cuota de todos.
+ */
+const limiteGeo = limitar({
+  maximo: 30,
+  ventanaMs: 60 * 1000,
+  mensaje: 'Demasiadas consultas de direccion seguidas. Espere unos segundos.',
+});
+
+/**
+ * GET /api/v1/mapa/direccion?lat=..&lng=..
+ *
+ * Geocodificacion inversa: devuelve la direccion escrita del punto. La usa la
+ * aplicacion movil para rellenar sola la casilla "Direccion completa" cuando el
+ * cliente situa el pin.
+ *
+ * SIN SESION, igual que las teselas y por el mismo motivo: la pantalla que la
+ * necesita convive con el mapa, y exigir sesion obligaria a osmdroid y al
+ * dialogo de direcciones a gestionar el token para algo que no revela ni un
+ * dato del restaurante. Lo que si tiene es limite por IP, arriba.
+ *
+ * RESPONDE 200 AUNQUE EL PROVEEDOR FALLE, con `disponible: false`. Que el
+ * servicio de mapas este caido no puede impedir dar de alta una direccion: el
+ * cliente la escribe a mano, como se hacia antes. Un 5xx aqui obligaria a la
+ * app a distinguir "no se pudo" de "esto esta roto" para acabar haciendo lo
+ * mismo en los dos casos.
+ */
+router.get('/direccion', limiteGeo, asyncHandler(async (req, res) => {
+  const r = await direccionDe(req.query.lat, req.query.lng);
+
+  // Sin cache de navegador: la respuesta ya se cachea en el servidor, que es
+  // donde sirve para todos, y aqui solo escondería un cambio de direccion.
+  res.set('Cache-Control', 'no-store');
+  return res.json(r);
 }));
 
 export default router;

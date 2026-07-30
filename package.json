@@ -8,6 +8,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "arrancar": "node scripts/arrancar.mjs",
+    "parar": "node scripts/arrancar.mjs --parar",
+    "registros": "docker compose logs -f --tail 60",
+    "estado": "docker compose ps",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "test": "node --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"tests/aceptacion/**/*.test.js\"",

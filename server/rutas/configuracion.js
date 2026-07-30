@@ -310,7 +310,14 @@ router.get('/promociones', requierePermiso('promociones.gestionar'), asyncHandle
       vigenteHasta: p.vigente_hasta,
       activa: Boolean(p.activa),
       enviadaEn: p.enviada_en,
+      // Dos hechos distintos: cuantos la tienen en su bandeja y cuantas
+      // notificaciones llegaron de verdad al movil. Sin Firebase configurado el
+      // segundo es 0 aunque el primero sea alto (db/08_promocion_push.sql).
       totalEnviados: p.total_enviados,
+      // `?? 0` porque una base a la que todavia no se aplico el 08 no tiene la
+      // columna: mejor un 0 honesto que un `undefined` que la pantalla pintaria
+      // como texto.
+      totalPush: p.total_push ?? 0,
       creadaPor: p.creada_por,
       creadoEn: p.creado_en,
     })),
@@ -403,9 +410,13 @@ router.post('/promociones/:id/enviar', requierePermiso('promociones.gestionar'),
       referencia: `PROMO-${id}`,
     });
 
+    // Se guardan los DOS numeros. `total_enviados` son las bandejas escritas y
+    // `total_push` las notificaciones que Firebase acepto entregar: sin
+    // credenciales de servidor el primero es N y el segundo 0, y la ficha de la
+    // promocion tiene que poder decirlo. Ver db/08_promocion_push.sql.
     await pool.execute(
-      'UPDATE promocion SET enviada_en = NOW(), total_enviados = ? WHERE id_promocion = ?',
-      [resultado.clientes, id]
+      'UPDATE promocion SET enviada_en = NOW(), total_enviados = ?, total_push = ? WHERE id_promocion = ?',
+      [resultado.clientes, resultado.enviados, id]
     );
 
     await auditar(null, {

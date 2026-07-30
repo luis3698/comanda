@@ -38,29 +38,84 @@
 
 ## ⚡ Arranque rápido
 
-### La parte web
+### Un solo comando
+
+```bash
+npm run arrancar
+```
+
+Hace la secuencia entera y **se para en el paso que falla**, diciendo qué hacer: crea el
+`.env`, levanta los contenedores, espera a que la base responda de verdad, aplica los
+`db/*.sql` que falten y termina enseñando por dónde entrar.
+
+```
+▶ Comprobando el entorno
+  ✓ docker   ✓ node 24.16.0   ✓ .env
+▶ Levantando los contenedores
+  ✓ contenedores en marcha
+▶ Esperando a que el servidor responda
+  ✓ http://localhost:3000/api/v1/salud → {"estado":"ok","bd":"conectada"}
+▶ Poniendo la base al día
+  ✓ 05_movil.sql — canal digital: clientes, reservas, domicilios y cobertura
+  ✓ 06_pagos.sql — métodos de pago de la app y verificación de comprobantes
+  ✓ 07_rendimiento.sql — índices de las consultas calientes
+
+Todo listo.
+  Entrar          http://localhost:3000
+```
+
+Funciona igual en **PowerShell, cmd y Git Bash**: es Node, no bash.
+
+| Añada | Y además |
+|---|---|
+| `npm run arrancar -- --rapido` | No reconstruye la imagen. Para cuando solo tocó `public/` |
+| `npm run arrancar -- --limpio` | Empieza de cero. ⚠️ **borra la base** |
+| `npm run arrancar -- --movil` | Compila e instala la app Android. Vale por **cable, wifi o emulador**; si no hay nada conectado, arranca un emulador |
+| `npm run arrancar -- --pruebas` | Al terminar pasa las 99 pruebas |
+| `npm run arrancar -- --local` | Base en Docker, servidor con `node --watch` para depurar |
+| `npm run parar` | Baja los contenedores. La base se conserva |
+
+Se combinan: `npm run arrancar -- --limpio --pruebas`.
+
+<details>
+<summary><b>La misma secuencia a mano</b></summary>
+
+<br>
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
-```
-
-Compruebe que responde:
-
-```bash
 curl -s http://localhost:3000/api/v1/salud
 ```
 
-Debe decir `{"estado":"ok","bd":"conectada"}`. **La web ya está en <http://localhost:3000>.**
+Debe decir `{"estado":"ok","bd":"conectada"}`.
 
-> La primera vez tarda: construye la imagen y MySQL ejecuta los `db/*.sql` en orden.
-> Si `curl` no responde, lo más común es que Docker Desktop no esté abierto.
+La primera vez tarda: construye la imagen y MySQL ejecuta los `db/*.sql` en orden. Si
+`curl` no responde, lo más común es que Docker Desktop no esté abierto.
+
+**Y hay un paso que a mano se olvida:** el entrypoint de MySQL ejecuta `db/*.sql` solo la
+**primera** vez que se crea el volumen. Sobre una base que ya existe hay que aplicar a mano
+los archivos nuevos, y el síntoma de no hacerlo aparece días después —«no hay posiciones de
+domicilio configuradas» cuando un cajero acepta su primer pedido—. Los tres son
+reaplicables:
+
+```bash
+docker exec -i sigr_db mysql -uroot -proot_sigr_dev sigr < db/05_movil.sql
+docker exec -i sigr_db mysql -uroot -proot_sigr_dev sigr < db/06_pagos.sql
+docker exec -i sigr_db mysql -uroot -proot_sigr_dev sigr < db/07_rendimiento.sql
+```
+
+`npm run arrancar` los pasa siempre, y por eso no hay nada que recordar.
+
+</details>
 
 ### La app móvil, con un solo comando
 
 ```bash
-cd movil && ./arrancar.sh
+npm run arrancar -- --movil
 ```
+
+o, si prefiere solo la parte Android: `cd movil && ./arrancar.sh`
 
 Hace la secuencia entera —servidor, puente al móvil, compilar, instalar, abrir— y **se
 para en el paso que falla**, diciendo qué hacer:
@@ -72,13 +127,25 @@ para en el paso que falla**, diciendo qué hacer:
   ✓ ya estaba arriba
   ✓ canal digital activo
 ▶ Preparando el móvil
-  ✓ 2412DPC0AG (U8AEV8PFPBDEDIPN)
+  ✓ 2412DPC0AG por wifi (adb-U8AEV8PFPBDEDIPN-…._adb-tls-connect._tcp)
   ✓ puente abierto: el localhost:3000 del móvil apunta a este PC
 ▶ Compilando e instalando la app
   ✓ instalada
 ▶ Abriendo la app
   ✓ SIGR arrancando en el móvil
 ```
+
+**Sirve para las tres formas de tener un Android delante:**
+
+| Cómo esté conectado | Qué hace |
+|---|---|
+| **Cable** | Lo usa tal cual |
+| **Wifi** (depuración inalámbrica) | Lo usa tal cual. `adb reverse` funciona igual que por USB |
+| **Cable y wifi a la vez** | Cierra la inalámbrica: con dos entradas del mismo móvil, `adb reverse` falla con *«more than one device»* |
+| **Emulador ya abierto** | Lo usa tal cual |
+| **Nada conectado** | **Arranca un emulador** con el primer AVD que encuentre, y espera a que termine de arrancar |
+
+> Con `--sin-emulador` no arranca ninguno y se limita a avisar de que no hay dispositivo.
 
 Para reabrir el puente sin recompilar, que es lo típico tras desenchufar el cable:
 
@@ -225,6 +292,10 @@ Antes de aceptar el primer pedido hay que configurar la cobertura:
 > **Administración → Canal digital → Zonas de entrega** → clic para el centro, arrastre
 > para el radio, y precio y pedido mínimo por zona.
 
+El mapa **abre encuadrado sobre la cobertura que ya existe**, y una zona nueva nace en el
+centro de esa vista. Solo cuando todavía no hay ninguna zona mira a la ficha del
+restaurante, y en último término a unas coordenadas de fábrica.
+
 Y las formas de pago, si quiere cobrar por transferencia:
 
 > **Administración → Canal digital → Aplicación móvil → Métodos de pago**
@@ -303,6 +374,41 @@ cd movil && ./gradlew assembleRelease
 
 </details>
 
+### La bandeja de avisos
+
+Se organiza sola en cuanto crece: filtros por tipo (pedidos, reservas, ofertas) con su
+recuento, y separadores de **Hoy / Ayer / Anteriores** dentro de la lista. Los filtros solo
+aparecen a partir de cuatro avisos, y ninguno que dejaría la lista vacía se ofrece.
+
+**Se elimina deslizando**, hacia cualquiera de los dos lados —cuál es «el natural» depende de
+la mano con la que se sujete el teléfono—. La tarjeta desaparece al instante y el borrado
+real se manda solo si el **Deshacer** del mensaje inferior expira sin que nadie lo pulse:
+deslizar es fácil de hacer sin querer, y sin vuelta atrás se perdería el aviso con el código
+de la reserva.
+
+> Quien no pueda hacer el gesto tiene el botón de la barra, que vacía los leídos de una vez
+> y **conserva lo no leído**. Es la misma regla que ya cumplen el diseñador de salón y las
+> zonas de entrega: todo arrastre tiene salida por otro camino.
+
+El borrado es real, y aquí sí corresponde: una notificación es una **copia** de un aviso
+cuyo original vive en la reserva o el pedido. Tirarla no toca el pedido, ni su factura, ni la
+auditoría. Por eso `db/09_borrar_avisos.sql` concede `DELETE` sobre esa tabla **y solo sobre
+esa**: `factura` y `log_auditoria` siguen siendo intocables para el usuario de la aplicación.
+
+### La foto de perfil
+
+En **Perfil**, tocar el avatar abre el selector de fotos del sistema.
+
+> Se usa `PickVisualMedia` y **no** el permiso de galería. Es la diferencia entre pedir
+> acceso a *todas* las fotos del cliente —un diálogo que mucha gente rechaza, con razón— y
+> que elija una y solo esa llegue a la aplicación. No hace falta declarar
+> `READ_MEDIA_IMAGES`.
+
+Sin foto se muestra la inicial del nombre, no un hueco gris. El tamaño se comprueba en el
+móvil antes de subir (2 MB, el mismo tope del servidor) para no gastar la subida entera de
+una foto de 8 MB antes de que la rechacen al otro lado, y la copia temporal se borra pase lo
+que pase.
+
 ### Lo que la app añade al lado web
 
 | Dónde | Qué |
@@ -330,6 +436,21 @@ domicilio aparece como «D7» y se distingue de un vistazo del servicio en sala.
 `/api/v1/mapa/teselas/:z/:x/:y.png`, un proxy con caché en disco, así que el CSP estricto no
 se tocó y no hace falta ninguna clave de API.
 
+**La dirección se escribe sola.** En **Perfil → Mis direcciones**, señalar un punto en el
+mapa rellena la casilla «Dirección completa» con la dirección real de ese portal —«Calle 62
+#11-04, Chapinero, Bogotá»—. Se puede corregir a mano después; lo que se evita es teclear
+eso entero en un móvil, que es lento y se presta a erratas que acaba pagando el repartidor.
+
+La traducción la hace el servidor en `/api/v1/mapa/direccion`, no el móvil, por las mismas
+razones que las teselas: sin clave de API, sin que el teléfono del comensal hable con
+terceros, y con una caché compartida —diez vecinos del mismo edificio son una consulta, no
+diez—. El `Geocoder` de Android se descartó porque depende de los servicios de Google Play y
+en un móvil sin ellos devuelve una lista vacía sin decir por qué.
+
+> Nominatim admite **una petición por segundo** en total. El servidor lo respeta con una
+> cola serializada, caché de 24 h y un límite por IP. Si el servicio no contesta, la casilla
+> no se autocompleta y ya está: la dirección se escribe a mano, como antes.
+
 **El pago se verifica antes de cocinar.** Con Nequi, Bancolombia o DaviPlata el cliente sube
 el comprobante y **el pedido no avanza hasta que Caja lo confirma**. Contra entrega no
 requiere verificación.
@@ -341,6 +462,65 @@ requiere verificación.
 **Son opcionales.** Sin Firebase configurado el sistema funciona igual: los avisos se
 guardan en la bandeja de la app y el cliente los ve al abrirla; solo no suena el aviso en el
 móvil.
+
+Por eso **Canal digital → Aplicación móvil** lo dice como una nota informativa y **se puede
+cerrar** para siempre. Antes era un ⚠ permanente, y eso estaba mal planteado: marcar como
+avería algo que es un modo de funcionamiento previsto enseña a ignorar los avisos, y el día
+que salga uno de verdad tampoco se leerá. La nota trae además el comando exacto, en vez de
+mandar a editar el `.env` a mano:
+
+```bash
+npm run firebase -- ruta/al/archivo.json
+```
+
+Si algún día se configura el push, la nota deja de salir sola aunque se hubiera cerrado.
+
+### Firebase son DOS mitades, y hacen falta las dos
+
+Es la confusión más fácil de tener aquí, porque cada mitad falla de forma distinta y una de
+ellas engaña:
+
+| Mitad | Qué archivo | Para qué | Si falta |
+|---|---|---|---|
+| **Cliente** | `movil/app/google-services.json` | Que el móvil obtenga su token y lo registre | El servidor no tiene a quién enviar |
+| **Servidor** | `FCM_*` en el `.env` | Que el servidor pueda **enviar** a Google | Nada sale del servidor |
+
+Se puede tener la primera y no la segunda —dispositivos registrados en la base y cero
+notificaciones entregadas—, que es el caso por defecto de este repositorio.
+
+> [!WARNING]
+> **Ver un aviso dentro de la app NO demuestra que el push funcione.** Todo aviso se escribe
+> primero en la bandeja de la aplicación y solo después se intenta enviar al móvil; la
+> bandeja se llena igual aunque Firebase no esté configurado. Al abrir la app se ve el aviso
+> y parece que funcionó.
+>
+> **La prueba de verdad:** cierre la aplicación por completo y envíe la promoción. Si no
+> aparece nada en la barra de notificaciones del teléfono, el push está apagado.
+>
+> Y aun con Firebase bien configurado, en Android 13 o superior no se muestra nada hasta que
+> el usuario concede el permiso de notificaciones que la app pide al arrancar.
+
+### Si Firebase está bien y aun así no suena: el fabricante
+
+Comprobado en un Xiaomi con HyperOS: con las dos mitades puestas, Google acepta el mensaje y
+devuelve su identificador —así que el servidor hizo su trabajo— y el teléfono **no muestra
+nada**. No es un fallo del sistema.
+
+Xiaomi, Huawei, Oppo y Vivo bloquean por defecto que una app se despierte en segundo plano, y
+FCM necesita justo eso. En el teléfono hay que permitirlo a mano:
+
+> **Ajustes → Aplicaciones → SIGR → Ahorro de batería → Sin restricciones**
+> y **Inicio automático** (o «Autostart») activado.
+
+Dos cosas más que confunden al probar:
+
+- **`adb shell am force-stop` invalida la prueba.** Deja la app en estado *stopped* de
+  Android, donde el sistema NO le entrega mensajes FCM hasta que alguien la abra a mano.
+  Para probar en segundo plano, use el botón de inicio, no `force-stop`.
+- **Un 200 de FCM no es una entrega.** Significa que Google se hizo cargo del mensaje. Si el
+  móvil está sin red o el fabricante lo bloquea, se queda en cola o se descarta, y el
+  servidor no tiene forma de enterarse. Por eso la ficha de la promoción dice «aceptados por
+  Firebase» y no «entregados».
 
 ### Lado de la app — ya configurado
 
@@ -446,19 +626,25 @@ Sin dependencias nuevas: el JWT RS256 que exige FCM HTTP v1 se firma con `node:c
 
 | Comando | Qué hace |
 |---|---|
+| `npm run arrancar` | **Lo levanta todo.** Es lo que hay que ejecutar tras cambiar código del servidor |
+| `npm run parar` | Baja los contenedores. La base se conserva |
+| `npm run registros` | Sigue los registros de los dos contenedores en vivo |
+| `npm run estado` | Qué contenedores hay en pie |
 | `npm start` | Servidor en modo normal. Es lo que ejecuta el contenedor `sigr_api` |
 | `npm run dev` | Igual, con `node --watch`: reinicia solo al guardar |
-| `docker compose up -d --build api` | **Tras cambiar código del servidor.** `restart` NO basta: la imagen lleva `server/` copiado dentro |
+| `docker compose up -d --build api` | Lo que `npm run arrancar` hace por dentro. `restart` NO basta: la imagen lleva `server/` copiado dentro |
 | `cd movil && ./gradlew installDebug` | Tras cambiar código de la app |
 
 ### Probar
 
 | Comando | Qué verifica | ¿Servidor? | ¿MySQL? |
 |---|---|:--:|:--:|
+| `npm run arrancar -- --pruebas` | **Levanta el sistema y pasa las tres baterías (99)** | — | — |
 | `npm test` | Unitarias + aceptación (64) | ➖ | ✔️ |
 | `npm run test:e2e` | Los 5 casos de uso del FSD cap. 7 (8) | ✔️ | ✔️ |
 | `npm run test:seguridad` | Superficie de ataque (27) | ➖ | ✔️ |
 | `npm run test:carga` | 50 dispositivos concurrentes | ✔️ | ✔️ |
+| `node tests/integracion/tiempo-real.mjs` | CA-01 y CA-02 cronometrados sobre WebSocket real | ✔️ | ✔️ |
 | `cd movil && ./gradlew testDebugUnitTest` | Unitarias de la app (7) | ➖ | ➖ |
 
 ### Limpiar la base de datos
@@ -566,6 +752,8 @@ Se copian de `.env.example`. Los valores por defecto funcionan en local sin toca
 | `MAPA_TESELAS_URL` | OpenStreetMap | Origen de las teselas del mapa |
 | `MAPA_CACHE_DIR` | `.cache/teselas` | Fuera de `public/`: no se sirven como estáticos |
 | `MAPA_USER_AGENT` | `SIGR/0.1 …` | La política de OSM exige identificarse |
+| `MAPA_GEOCODIFICACION_URL` | Nominatim | De un punto del mapa a una dirección escrita |
+| `MAPA_IDIOMA` | `es` | Para que diga «Calle» y no «Street» |
 | `APP_VERSION_MINIMA` | `1` | Por debajo, la app pide actualizarse |
 
 </details>
@@ -583,11 +771,12 @@ Se copian de `.env.example`. Los valores por defecto funcionan en local sin toca
    db.js                      pool, consultas parametrizadas y transacciones con reintento
    realtime.js                canal WebSocket y catálogo de eventos
    middleware/                auth del personal, auth de clientes, permisos, errores,
-                              interruptor de la app y límite por IP
+                              compresión, interruptor de la app y límite por IP
    rutas/                     un archivo por área: salon, ordenes, kds, caja, catalogo,
                               app, reservas, domicilios, configuracion, mapa
    servicios/                 precios, dinero, inventario, auditoría, clientes, entregas,
-                              reservas, domicilios, pagos, push, teselas, parámetros
+                              reservas, domicilios, pagos, push, teselas, parámetros,
+                              caché de la matriz de permisos
 
 📁 public/                    Frontend — sin compilar, tal cual lo sirve el navegador
    comun/                     cliente HTTP, componentes de interfaz y cliente WebSocket
@@ -610,19 +799,21 @@ Se copian de `.env.example`. Los valores por defecto funcionan en local sin toca
    04_privilegios.sql         privilegios mínimos de los usuarios de base de datos
    05_movil.sql               canal digital: clientes, reservas, domicilios, cobertura
    06_pagos.sql               métodos de pago de la app y verificación de comprobantes
+   07_rendimiento.sql         índices de las consultas calientes (reaplicable)
+   08_promocion_push.sql      separa «guardada en la bandeja» de «sonó en el móvil»
+   09_borrar_avisos.sql       DELETE sobre notificacion_cliente para sigr_app
 
 📁 tests/                     unit · aceptacion · e2e · seguridad · carga · integracion
-📁 scripts/                   vaciar.js · hash.js · contraste.mjs
+📁 scripts/                   arrancar.mjs · vaciar.js · hash.js · contraste.mjs
 📁 respaldos/                 copias de la base (ignorado por git)
 ```
 
-> Para instalar el canal digital en una base **ya existente** —el entrypoint de MySQL solo
-> ejecuta `db/*.sql` la primera vez—:
-> ```bash
-> docker exec -i sigr_db mysql -uroot -proot_sigr_dev sigr < db/05_movil.sql
-> docker exec -i sigr_db mysql -uroot -proot_sigr_dev sigr < db/06_pagos.sql
-> ```
-> Ambos son reaplicables: usan `CREATE TABLE IF NOT EXISTS` e `INSERT IGNORE`.
+> **`npm run arrancar` aplica del 05 al 07 en cada arranque**, y con eso basta: los tres
+> están escritos para poder reaplicarse (`CREATE TABLE IF NOT EXISTS`, `INSERT IGNORE`, y
+> los `ALTER` envueltos en un procedimiento que comprueba antes).
+>
+> Hace falta porque el entrypoint de MySQL ejecuta `db/*.sql` solo la **primera** vez que se
+> crea el volumen: sobre una base que ya existe, un archivo nuevo no se aplicaría nunca.
 
 ---
 
@@ -680,6 +871,42 @@ verlos, con reconexión automática y respaldo de sondeo cada 10 s.
 > avisan del cambio en vez de repintarse, para no borrar lo que el cajero está tecleando con
 > el cliente delante.
 
+**⚡ La matriz de permisos se relee en cada petición, pero no desde la base.**
+El FSD 5.1 exige que revocar un permiso surta efecto en la petición siguiente, y eso se
+cumple. Lo que cambió es de dónde sale el dato: `servicios/permisosRol.js` lo tiene en
+memoria y se invalida en el momento exacto en que alguien guarda la matriz —dos o tres
+veces en la vida del sistema, frente a un `JOIN` por petición—. Lo que **sí** se relee
+siempre de la base es el rol del usuario y si sigue activo: dar de baja a alguien tiene que
+cortar en seco.
+
+Esa invalidación también reajusta los WebSocket ya abiertos. Antes no: un KDS resolvía sus
+permisos en el handshake y se quedaba con ellos las doce horas del turno, así que revocar un
+permiso cortaba el acceso por HTTP pero no el chorro de eventos en vivo —la misma
+información por otra puerta—.
+
+**🚫 Los archivos estáticos no tocan la base.**
+`cargarSesion` estaba montado sobre *toda* petición, así que cada hoja de estilos y cada
+módulo JS pagaba dos `SELECT` y un `UPDATE`: abrir una pantalla del backoffice costaba unas
+sesenta operaciones **antes** de pedir el primer dato. Ahora solo lo hacen las rutas
+`/api/`, que son las únicas que consultan `req.usuario`. Medido con `SHOW GLOBAL STATUS`:
+20 peticiones a un estático pasaron de 60 consultas a 0.
+
+Por lo mismo, `ultima_actividad` se reescribe como mucho una vez por minuto en vez de en
+cada petición. La regla que lo usa es la de los 10 minutos de inactividad del FSD 5.1: una
+resolución de un minuto la respeta de sobra.
+
+**📦 Todo viaja comprimido, sin dependencias nuevas.**
+`middleware/compresion.js` son ochenta líneas de `node:zlib`, por la misma razón por la que
+las cabeceras de seguridad no usan helmet. Leaflet baja de 147 KB a 41 KB (−72 %) y una cola
+del KDS de 51 KB a 1 KB (−98 %). La calidad de brotli está medida, no elegida a ojo: la
+tabla con los números está en la cabecera del archivo.
+
+> La trampa que costó encontrar: `express.static` sirve con `pipe`, que ante contrapresión
+> pausa el origen y espera un `drain` **de `res`** —pero quien se llena es el compresor. Sin
+> reenviar ese evento, los archivos grandes entregaban los diez bytes de la cabecera gzip y
+> la petición no terminaba nunca. Los JSON no lo notaban: caben en el buffer y nunca
+> devuelven `false`.
+
 **🛡️ La UI oculta, la API revalida.**
 Doble capa siempre. Que una pantalla no muestre un botón no es una garantía: la ruta
 correspondiente vuelve a comprobar el permiso. Lo mismo con la zona `Domicilios`: se esconde
@@ -723,16 +950,20 @@ axe-core o Lighthouse en el pipeline, y pruebas con el personal real por rol (FS
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| `curl` a `/api/v1/salud` no responde | Docker Desktop cerrado | Ábralo y `docker compose up -d` |
-| Cambié código del servidor y no pasa nada | `restart` no recarga la imagen | `docker compose up -d --build api` |
+| `docker compose` falla nada más empezar, hablando de `GetFileAttributesEx` | Falta el `.env` | `npm run arrancar` lo crea solo |
+| `curl` a `/api/v1/salud` no responde | Docker Desktop cerrado | Ábralo y `npm run arrancar` |
+| Cambié código del servidor y no pasa nada | `restart` no recarga la imagen | `npm run arrancar` |
+| Entro y el salón está en blanco | Es el diseño: el plano se dibuja desde cero | Administración → Salón. `npm run arrancar` lo avisa cuando pasa |
 | «La operación afecta a registros relacionados» | Clave foránea | El mensaje detallado dice qué mesa y por qué; suele ser una reserva viva |
 
 ### La app
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| «No disponible ahora mismo», móvil por cable | El puente se cayó | `adb reverse tcp:3000 tcp:3000`. Verifique con `adb reverse --list` |
-| Lo mismo, y `adb reverse` falla | Móvil conectado por cable **y** por wifi | `adb disconnect` primero |
+| «No disponible ahora mismo», móvil por cable | El puente se cayó | `npm run arrancar -- --movil --sin-compilar`, que lo reabre |
+| Lo mismo, y `adb reverse` falla | Móvil conectado por cable **y** por wifi | `adb disconnect` primero. El guion ya lo hace, pero **solo** en ese caso |
+| «No hay ningún dispositivo» con el móvil por wifi | Versiones anteriores hacían `adb disconnect` a secas y lo tiraban | Ya corregido: la inalámbrica solo se cierra si hay también cable |
+| «Error type 3 · Activity class does not exist» | La app no está instalada en ese dispositivo | Ejecútelo sin `--sin-compilar`. El guion ahora lo detecta y lo dice así |
 | Lo mismo, pero la red va bien | El canal digital está **apagado** en Admin | Admin → Canal digital → App móvil |
 | Conectaba y de pronto dejó de hacerlo | Guardó una dirección que ya no vale | `adb shell pm clear co.sigr.cliente` |
 | `ERROR: JAVA_HOME is not set` | Gradle no encuentra el JDK | `export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"` |

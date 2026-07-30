@@ -74,13 +74,63 @@
 }
 
 /* Aviso de push sin configurar. Ocupa la fila entera del grid. */
+/* Nota informativa sobre el push, no una alerta: el push es opcional por
+   diseño y el sistema funciona sin él (ver pintarAvisoPush en app-movil.js).
+   Por eso usa los colores de información y no los de alerta. */
 .aviso-push {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
   padding: .75rem 1rem;
-  background: var(--c-alerta-bg);
-  color: var(--c-alerta);
+  background: var(--c-info-bg);
+  color: var(--c-info);
   border-radius: var(--radio);
   font-size: .875rem;
+}
+
+.aviso-push__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-push__como {
+  margin: .5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* El comando se puede seleccionar y copiar de un tirón; en pantalla estrecha
+   se desborda en horizontal él solo en vez de romper la caja. */
+.aviso-push__como code {
+  padding: .15rem .4rem;
+  border-radius: calc(var(--radio) / 2);
+  background: rgb(0 0 0 / .07);
+  user-select: all;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Objetivo táctil completo aunque el aspa sea pequeña (--target-tactil, 48px:
+   ver «Accesibilidad» en el README). */
+.aviso-push__cerrar {
+  flex: none;
+  min-width: var(--target-tactil, 48px);
+  min-height: var(--target-tactil, 48px);
+  margin: calc(var(--target-tactil, 48px) / -4) calc(var(--target-tactil, 48px) / -4) 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radio);
+}
+
+.aviso-push__cerrar:hover {
+  background: rgb(0 0 0 / .07);
 }
 
 /* ---------------------------------------------------------------------

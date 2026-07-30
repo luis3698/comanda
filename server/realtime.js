@@ -16,7 +16,8 @@
  * URLs acaban en logs y en el historial del navegador.
  */
 import { WebSocketServer } from 'ws';
-import { consultar, consultarUno } from './db.js';
+import { consultarUno } from './db.js';
+import { permisosDeRol, alInvalidar } from './servicios/permisosRol.js';
 import { COOKIE_SESION } from './middleware/auth.js';
 
 /** Eventos que publica el sistema (FSD 8). */
@@ -78,20 +79,46 @@ async function autenticarConexion(peticion) {
   );
   if (!fila || !fila.activo) return null;
 
-  const permisos = await consultar(
-    `SELECT p.codigo FROM rol_permiso rp
-       JOIN permiso p ON p.id_permiso = rp.id_permiso
-      WHERE rp.id_rol = ?`,
-    [fila.id_rol]
-  );
-
   return {
     id: fila.id_usuario,
     nombre: fila.nombre_completo,
+    idRol: fila.id_rol,
     rol: fila.rol,
-    permisos: new Set(permisos.map((p) => p.codigo)),
+    permisos: await permisosDeRol(fila.id_rol),
   };
 }
+
+/**
+ * Reasigna los permisos de los clientes ya conectados cuando cambia la matriz.
+ *
+ * Sin esto, un socket abierto seguia difundiendo con los permisos que tenia al
+ * conectarse: revocar un permiso cortaba el acceso por HTTP en la peticion
+ * siguiente (FSD 5.1) pero no el chorro de eventos en vivo, que es la misma
+ * informacion por otra puerta. Ahora las dos capas cambian a la vez.
+ *
+ * Se dispara solo cuando el administrador guarda la matriz, no en cada evento.
+ */
+alInvalidar(async (idRol) => {
+  const afectados = [...clientes].filter((c) => idRol === undefined || c.usuario.idRol === idRol);
+  if (!afectados.length) return;
+
+  // Un rol -> una sola lectura, aunque tenga diez pantallas conectadas.
+  const porRol = new Map();
+  for (const cliente of afectados) {
+    try {
+      if (!porRol.has(cliente.usuario.idRol)) {
+        porRol.set(cliente.usuario.idRol, await permisosDeRol(cliente.usuario.idRol));
+      }
+      cliente.usuario.permisos = porRol.get(cliente.usuario.idRol);
+    } catch (e) {
+      // Si no se pudo releer, se cierra el socket en vez de dejarlo con
+      // permisos que ya no se sabe si valen. El cliente reconecta solo y
+      // vuelve a pasar por el handshake, que si lee de la base.
+      console.error('[realtime] no se pudieron releer los permisos:', e.message);
+      cliente.ws.close();
+    }
+  }
+});
 
 /**
  * Publica un evento a los clientes interesados.

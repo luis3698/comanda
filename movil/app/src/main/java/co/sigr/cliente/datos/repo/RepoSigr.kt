@@ -174,6 +174,21 @@ class RepoSigr(
     suspend fun zonasEntrega(): Resultado<List<ZonaEntrega>> =
         llamar { api.zonasEntrega() }.mapear { it.zonas }
 
+    /**
+     * Direccion escrita del punto donde esta el pin, o null.
+     *
+     * DEVUELVE null EN VEZ DE UN Resultado CON ERROR, a proposito. Quien llama
+     * a esto esta rellenando una casilla por comodidad; si el servicio de mapas
+     * no contesta, lo correcto es no tocar el campo y dejar que el cliente
+     * escriba, no ensenarle un error por algo que no pidio.
+     */
+    suspend fun direccionDePunto(lat: Double, lng: Double): String? =
+        llamar { api.direccionDePunto(lat, lng) }
+            .datosONull()
+            ?.takeIf { it.disponible }
+            ?.direccion
+            ?.takeIf { it.isNotBlank() }
+
     /** Formas de pago activas, con la llave a la que transferir. */
     suspend fun metodosPago(): Resultado<List<MetodoPago>> =
         llamar { api.metodosPago() }.mapear { it.metodos }
@@ -241,6 +256,19 @@ class RepoSigr(
 
     suspend fun marcarTodasLeidas(): Resultado<Unit> =
         llamar { api.marcarTodasLeidas() }.mapear { }
+
+    /**
+     * Borra un aviso.
+     *
+     * Devuelve Boolean y no Resultado porque quien llama —el gesto de deslizar—
+     * ya quitó la tarjeta de la pantalla antes de esperar la respuesta. Lo único
+     * que necesita saber después es si hay que devolverla a su sitio.
+     */
+    suspend fun borrarNotificacion(id: Long): Boolean =
+        llamar { api.borrarNotificacion(id) } is Resultado.Exito
+
+    suspend fun borrarNotificacionesLeidas(): Resultado<Unit> =
+        llamar { api.borrarNotificacionesLeidas() }.mapear { }
 
     /**
      * Registra el token de notificaciones.

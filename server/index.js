@@ -14,6 +14,7 @@ import 'dotenv/config';
 
 import { verificarConexion, cerrarPool } from './db.js';
 import { rutaNoEncontrada, manejadorErrores } from './middleware/errores.js';
+import { comprimir } from './middleware/compresion.js';
 import { cargarSesion, protegerCsrf, limpiarSesionesVencidas } from './middleware/auth.js';
 import rutasAuth from './rutas/auth.js';
 import rutasUsuarios from './rutas/usuarios.js';
@@ -83,6 +84,11 @@ app.use((_req, res, next) => {
   next();
 });
 
+// Compresion. Va lo primero para envolver TODO lo que se responda: JSON de la
+// API, HTML, JavaScript y la copia vendorizada de Leaflet. Ver el detalle de
+// que se comprime y que no en middleware/compresion.js.
+app.use(comprimir());
+
 // Limite de cuerpo: una comanda o un formulario son pequenos. Un limite bajo
 // evita que una peticion enorme agote la memoria del proceso.
 app.use(express.json({ limit: '256kb' }));
@@ -141,7 +147,40 @@ app.get('/api/v1/salud', async (_req, res) => {
 app.use('/api/v1', rutasReportes);   // /dashboard/kpis, /reportes, /auditoria
 
 // --- Cliente estatico ---
-app.use(express.static(PUBLIC_DIR, { index: 'index.html', extensions: ['html'] }));
+//
+// Politica de cache en dos velocidades. Antes no habia ninguna: cada carga de
+// pantalla se traia los 150 KB de Leaflet y las fotos de la carta enteras, una
+// y otra vez, sobre el wifi compartido del restaurante.
+//
+// ETAG SIEMPRE, PORQUE NO HAY PASO DE COMPILACION
+// public/ se sirve tal cual (FSD 2.1), asi que un archivo cambia SIN cambiar de
+// nombre: no hay hash en la URL donde apoyarse. Cachear el HTML o el JS "por
+// tiempo" dejaria a un mesero con una version vieja del comandero y sin forma
+// de saberlo. Por eso lo normal aqui es no-cache: el navegador pregunta
+// siempre, pero si nada cambio el servidor responde 304 sin cuerpo, que es
+// donde esta el ahorro real.
+//
+// Las dos excepciones son archivos que NUNCA cambian bajo la misma URL:
+//   · /vendor/  -- Leaflet, una version fija que solo se mueve al actualizarla
+//                  a mano, y entonces cambia de contenido y de carpeta.
+//   · /uploads/ -- las fotos de los platos llevan nombre aleatorio de 32 hex
+//                  (servicios/imagenes.js) y jamas se sobrescriben: cambiar la
+//                  foto de un plato escribe un archivo nuevo y borra el viejo.
+// Con immutable el navegador ni siquiera revalida.
+const ANIO_S = 365 * 24 * 60 * 60;
+
+app.use(express.static(PUBLIC_DIR, {
+  index: 'index.html',
+  extensions: ['html'],
+  setHeaders: (res, ruta) => {
+    const relativa = path.relative(PUBLIC_DIR, ruta).split(path.sep).join('/');
+    if (relativa.startsWith('vendor/') || relativa.startsWith('uploads/')) {
+      res.setHeader('Cache-Control', `public, max-age=${ANIO_S}, immutable`);
+    } else {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 app.use(rutaNoEncontrada);
 app.use(manejadorErrores);
@@ -188,12 +227,50 @@ async function arrancar() {
   tareaLimpieza.unref();
 }
 
+/**
+ * Margen para que terminen las peticiones que ya estaban en curso.
+ *
+ * Docker manda SIGTERM y espera 10 s antes del SIGKILL, asi que el limite se
+ * pone por debajo: si algo se atasca, se sale por decision propia y con un
+ * aviso en el log, en vez de que lo mate el runtime sin dejar rastro.
+ */
+const MARGEN_APAGADO_MS = 8000;
+
+let apagando = false;
+
 async function apagar(senal) {
+  // Docker reenvia SIGTERM, y un Ctrl+C impaciente manda varios SIGINT. Sin
+  // esta guarda, la segunda señal entra a cerrar el pool que la primera ya
+  // estaba cerrando.
+  if (apagando) return;
+  apagando = true;
+
   console.log(`[sigr] ${senal} recibido, cerrando...`);
   clearInterval(tareaLimpieza);
   realtime?.cerrar();
-  servidor?.close();
+
+  // server.close() deja de aceptar conexiones nuevas y espera a que las
+  // abiertas terminen. Antes no se esperaba: el process.exit() de la linea
+  // siguiente cortaba en seco, y una peticion a mitad -- un cobro, el cierre de
+  // un turno -- moria sin respuesta aunque su transaccion ya hubiera confirmado.
+  // El cajero veia un error de red sobre una operacion que SI se hizo.
+  await new Promise((resolver) => {
+    if (!servidor) return resolver();
+
+    const limite = setTimeout(() => {
+      console.warn(`[sigr] quedaban peticiones tras ${MARGEN_APAGADO_MS} ms: se cierra igualmente`);
+      resolver();
+    }, MARGEN_APAGADO_MS);
+    limite.unref();
+
+    servidor.close(() => {
+      clearTimeout(limite);
+      resolver();
+    });
+  });
+
   await cerrarPool().catch(() => {});
+  console.log('[sigr] cerrado limpiamente');
   process.exit(0);
 }
 

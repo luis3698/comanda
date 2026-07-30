@@ -521,6 +521,30 @@ router.post('/notificaciones/leidas', requiereCliente, asyncHandler(async (req, 
   return res.json(await push.marcarTodasLeidas(req.cliente.id));
 }));
 
+/**
+ * DELETE /api/v1/app/notificaciones/leidas
+ *
+ * Vacia la bandeja conservando lo no leido. Va ANTES que la ruta con :id: si se
+ * declarara despues, Express casaria "leidas" con el parametro, Number() daria
+ * NaN y la peticion moriria con un 400 que no explica nada.
+ */
+router.delete('/notificaciones/leidas', requiereCliente, asyncHandler(async (req, res) => {
+  return res.json(await push.borrarLeidas(req.cliente.id));
+}));
+
+/**
+ * DELETE /api/v1/app/notificaciones/:id
+ *
+ * Lo usa el gesto de deslizar de la aplicacion. Devuelve 200 aunque la
+ * notificacion ya no estuviera: el cliente pide que desaparezca y ha
+ * desaparecido, que es lo que importa. Un 404 obligaria a la app a distinguir
+ * "no existia" de "no se pudo" para acabar haciendo lo mismo -- quitarla de la
+ * lista -- y ademas se dispararia solo al deslizar dos veces rapido.
+ */
+router.delete('/notificaciones/:id', requiereCliente, asyncHandler(async (req, res) => {
+  return res.json(await push.borrarNotificacion(req.cliente.id, Number(req.params.id)));
+}));
+
 /** POST /api/v1/app/dispositivos -- registra el token FCM del movil. */
 router.post('/dispositivos', requiereCliente, asyncHandler(async (req, res) => {
   const { token, plataforma, modelo } = req.body ?? {};

@@ -50,8 +50,19 @@ services:
     # sola. Lo de `environment` de abajo sigue mandando, porque en Compose tiene
     # prioridad sobre env_file, y es justo lo que hace falta para las tres que
     # DENTRO de la red de Docker valen otra cosa.
+    #
+    # `required: false` porque sin él un .env ausente tumba TODO el comando,
+    # incluido `docker compose ps` o `logs`, con un mensaje que habla de
+    # GetFileAttributesEx y no de copiar .env.example. Es el primer tropiezo en
+    # una maquina recien clonada, y deja el proyecto pareciendo roto cuando solo
+    # falta un archivo. Sin el .env el sistema arranca igual: los valores por
+    # defecto de `environment` cubren lo imprescindible y las variables
+    # opcionales -- FCM, MAPA_* -- ya estan pensadas para poder faltar.
+    #
+    # Quien use `npm run arrancar` ni se entera: ese guion crea el .env antes.
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000

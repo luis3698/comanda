@@ -103,6 +103,19 @@ interface ApiSigr {
     @GET("api/v1/app/zonas-entrega")
     suspend fun zonasEntrega(): Response<RespuestaZonas>
 
+    /**
+     * Direccion escrita de un punto del mapa.
+     *
+     * Cuelga de /mapa y no de /app porque es el mismo servicio que ya sirve las
+     * teselas: no lleva sesion y no depende del canal digital. Que la app este
+     * apagada por mantenimiento no debe romper un mapa.
+     */
+    @GET("api/v1/mapa/direccion")
+    suspend fun direccionDePunto(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+    ): Response<RespuestaDireccionPunto>
+
     @GET("api/v1/app/metodos-pago")
     suspend fun metodosPago(): Response<RespuestaMetodos>
 
@@ -155,6 +168,14 @@ interface ApiSigr {
 
     @POST("api/v1/app/notificaciones/leidas")
     suspend fun marcarTodasLeidas(): Response<Map<String, Any>>
+
+    /** Borra un aviso. Lo dispara el gesto de deslizar de la bandeja. */
+    @DELETE("api/v1/app/notificaciones/{id}")
+    suspend fun borrarNotificacion(@Path("id") id: Long): Response<Map<String, Any>>
+
+    /** Vacia la bandeja conservando lo que aun no se ha leido. */
+    @DELETE("api/v1/app/notificaciones/leidas")
+    suspend fun borrarNotificacionesLeidas(): Response<Map<String, Any>>
 
     // --- Dispositivos (push) ---
 

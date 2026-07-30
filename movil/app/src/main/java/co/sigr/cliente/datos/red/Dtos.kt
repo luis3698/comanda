@@ -169,6 +169,21 @@ data class ZonaEntrega(
 
 data class RespuestaZonas(val zonas: List<ZonaEntrega> = emptyList())
 
+/**
+ * Direccion escrita de un punto del mapa (geocodificacion inversa).
+ *
+ * `disponible` en false significa que el servicio de mapas no contesto. NO es
+ * un error que haya que ensenar: el cliente escribe la direccion a mano, que es
+ * como funcionaba antes de que esto existiera. Por eso el servidor responde 200
+ * igualmente y aqui se distingue de `direccion` nula por no haber nada en ese
+ * punto —mitad de un descampado—, que se trata igual.
+ */
+data class RespuestaDireccionPunto(
+    val direccion: String? = null,
+    val disponible: Boolean = false,
+    val cacheada: Boolean = false,
+)
+
 data class PeticionCotizar(val lat: Double, val lng: Double, val subtotal: String)
 
 /**

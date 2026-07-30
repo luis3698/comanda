@@ -43,6 +43,15 @@ const estado = {
   /** Círculo provisional de la zona que se está editando. */
   borrador: null,
   marcadorPrueba: null,
+  /**
+   * Punto de partida del mapa, y con él el de una zona nueva.
+   *
+   * Este valor es solo el ÚLTIMO recurso: al cargar se sustituye por el centro
+   * de la cobertura existente y, si no hay ninguna, por la ficha del
+   * restaurante (ver el bloque de carga inicial). Solo sobrevive en una
+   * instalación recién puesta, donde no hay ni zonas ni ficha y hay que mirar a
+   * alguna parte.
+   */
   centroLocal: { lat: 4.5981, lng: -74.0758 },
 };
 
@@ -301,8 +310,13 @@ for (const id of ['z-lat', 'z-lng', 'z-color']) {
 $('btn-nueva').addEventListener('click', () => abrirFormulario(null));
 $('btn-cancelar').addEventListener('click', cerrarFormulario);
 
+// «Centrar» vuelve a encuadrar la cobertura entera, que es lo que se quiere ver
+// después de haberse ido de paseo por el mapa. Solo cae al punto guardado
+// cuando todavía no hay ninguna zona dibujada.
 $('btn-centrar').addEventListener('click', () => {
-  mapa.setView([estado.centroLocal.lat, estado.centroLocal.lng], 14);
+  if (!encuadrarEnCobertura()) {
+    mapa.setView([estado.centroLocal.lat, estado.centroLocal.lng], 14);
+  }
 });
 
 $('form-zona').addEventListener('submit', async (evento) => {
@@ -481,23 +495,73 @@ async function cargar() {
   pintarMapa();
 }
 
-try {
-  // El centro del mapa sale de la ficha del restaurante: empezar mirando el
-  // local ahorra buscarlo a mano cada vez que se abre la pantalla.
-  const ficha = await api.get('/app/restaurante');
-  if (Number.isFinite(Number(ficha.restaurante?.lat))) {
-    estado.centroLocal = {
-      lat: Number(ficha.restaurante.lat),
-      lng: Number(ficha.restaurante.lng),
-    };
-    mapa.setView([estado.centroLocal.lat, estado.centroLocal.lng], 13);
-  }
-} catch {
-  // Sin ficha se queda el centro por defecto. No es motivo para no abrir.
+/**
+ * Encuadra el mapa sobre la cobertura que ya existe.
+ *
+ * Se usan los BORDES de cada círculo y no sus centros: encuadrar por los
+ * centros deja media zona fuera de la pantalla en cuanto una tiene un radio
+ * grande, que es justo lo que se quiere ver.
+ *
+ * El recuadro de cada círculo se calcula con `L.latLng().toBounds()`, que
+ * trabaja solo con geometría, y NO con `L.circle().getBounds()`. Ese último
+ * necesita que el círculo esté añadido a un mapa —por dentro llama a
+ * `this._map.layerPointToLatLng()`— y sobre un círculo suelto revienta con
+ * «Cannot read properties of undefined». Aquí hacen falta los límites ANTES de
+ * pintar nada, así que no hay mapa al que añadirlos.
+ *
+ * @returns {boolean} si había cobertura que encuadrar.
+ */
+function encuadrarEnCobertura() {
+  const conCentro = estado.zonas.filter(
+    (z) => Number.isFinite(Number(z.centroLat)) && Number.isFinite(Number(z.centroLng))
+  );
+  if (!conCentro.length) return false;
+
+  const limites = L.latLngBounds(
+    // toBounds recibe el LADO del cuadrado, no el radio: de ahí el ×2.
+    conCentro.map((z) => L.latLng(z.centroLat, z.centroLng).toBounds(Number(z.radioM) * 2))
+  );
+
+  mapa.fitBounds(limites, { padding: [40, 40], maxZoom: 15 });
+
+  // El centro operativo pasa a ser el de la cobertura. De ahí salen el botón
+  // «centrar» y, sobre todo, el punto de partida de una zona NUEVA, que
+  // abrirFormulario() toma de mapa.getCenter().
+  const centro = limites.getCenter();
+  estado.centroLocal = { lat: centro.lat, lng: centro.lng };
+  return true;
 }
 
 try {
   await cargar();
+
+  // DE DÓNDE SALE EL CENTRO DEL MAPA, en este orden:
+  //
+  //   1. La cobertura que ya existe.
+  //   2. La ficha del restaurante.
+  //   3. Las coordenadas de fábrica.
+  //
+  // La cobertura va primero porque es donde está el trabajo. Antes se
+  // empezaba siempre por la ficha —y sin ficha, por unas coordenadas de
+  // Bogotá escritas en el código—, así que quien ya tenía sus zonas
+  // dibujadas abría la pantalla mirando a otra ciudad y tenía que buscarlas
+  // a mano cada vez. Peor aún: una zona nueva nace en el centro de la vista,
+  // de modo que el primer clic en «Nueva» la creaba en mitad de Bogotá en
+  // lugar de junto a las demás.
+  if (!encuadrarEnCobertura()) {
+    try {
+      const ficha = await api.get('/app/restaurante');
+      if (Number.isFinite(Number(ficha.restaurante?.lat))) {
+        estado.centroLocal = {
+          lat: Number(ficha.restaurante.lat),
+          lng: Number(ficha.restaurante.lng),
+        };
+        mapa.setView([estado.centroLocal.lat, estado.centroLocal.lng], 13);
+      }
+    } catch {
+      // Sin ficha se queda el centro de fábrica. No es motivo para no abrir.
+    }
+  }
 
   if (!puedeGestionar) {
     $('btn-nueva').classList.add('oculto');

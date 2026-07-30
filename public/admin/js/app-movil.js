@@ -70,16 +70,70 @@ function pintarResumen(r) {
     tarjeta('Caché del mapa', `${r.cacheMapa.megas} MB`, `${r.cacheMapa.archivos} teselas`)
   );
 
-  // Si falta configurar Firebase conviene decirlo aquí y no dejar que el
-  // administrador descubra por las malas que sus promociones no suenan.
-  if (!r.pushConfigurado) {
-    $('resumen').append(el('div', { clase: 'aviso-push' },
-      el('strong', {}, '⚠ Las notificaciones push no están configuradas. '),
-      el('span', {}, 'Los avisos se guardan en la aplicación y el cliente los ve al abrirla, ' +
-        'pero no suenan en el móvil. Para activarlas, rellene FCM_PROJECT_ID, ' +
-        'FCM_CLIENT_EMAIL y FCM_PRIVATE_KEY en el archivo .env.')
-    ));
+  pintarAvisoPush(r.pushConfigurado);
+}
+
+/**
+ * Nota sobre el estado del push.
+ *
+ * ESTO ERA UN ⚠ PERMANENTE, Y ESTABA MAL PLANTEADO.
+ *
+ * El push es OPCIONAL por diseño: sin Firebase el sistema funciona entero y los
+ * avisos llegan igual, solo que el cliente los ve al abrir la aplicación en vez
+ * de sonar en su móvil. Eso no es una avería ni una configuración a medias: es
+ * un modo de funcionamiento previsto y documentado.
+ *
+ * Marcarlo con un triángulo de alerta en cada carga de la pantalla tenía dos
+ * costes. El obvio, que molesta a quien ya decidió no usar Firebase y no puede
+ * hacerlo callar. El serio, que enseña a ignorar los avisos: cuando todo lo
+ * amarillo lleva meses siendo ruido, el día que aparezca uno de verdad tampoco
+ * se leerá.
+ *
+ * Así que ahora: tono informativo, dice qué SÍ funciona antes que qué no, trae
+ * el comando exacto en vez de mandar a editar un archivo a mano, y se puede
+ * cerrar. Lo que NO hace es mentir: si el push está apagado, se dice.
+ */
+const CLAVE_AVISO_PUSH = 'sigr.avisoPush.oculto';
+
+function pintarAvisoPush(configurado) {
+  // Configurado: no hay nada que contar. Y si alguien lo cerró y luego lo
+  // configuró, se borra la marca para que un futuro apagón sí vuelva a avisar.
+  if (configurado) {
+    try { localStorage.removeItem(CLAVE_AVISO_PUSH); } catch { /* modo privado */ }
+    return;
   }
+
+  let oculto = false;
+  try { oculto = localStorage.getItem(CLAVE_AVISO_PUSH) === '1'; } catch { /* modo privado */ }
+  if (oculto) return;
+
+  const nota = el('div', { clase: 'aviso-push', attrs: { role: 'note' } },
+    el('div', { clase: 'aviso-push__texto' },
+      el('strong', {}, 'Las notificaciones push no están activadas. '),
+      el('span', {}, 'Los avisos siguen llegando: se guardan en la aplicación y el cliente ' +
+        'los ve al abrirla. Lo único que falta es que suenen en el móvil.'),
+      el('p', { clase: 'aviso-push__como' },
+        el('span', { texto: 'Para activarlas, con la clave de cuenta de servicio de Firebase:' }),
+        el('code', { clase: 'mono', texto: 'npm run firebase -- ruta/al/archivo.json' })
+      )
+    ),
+    el('button', {
+      clase: 'aviso-push__cerrar',
+      type: 'button',
+      // El botón dice lo que hace, no solo una equis: un lector de pantalla
+      // anuncia "cerrar" sin más y no se sabe qué se cierra.
+      attrs: { 'aria-label': 'No volver a mostrar este aviso' },
+      texto: '✕',
+      on: {
+        click: () => {
+          try { localStorage.setItem(CLAVE_AVISO_PUSH, '1'); } catch { /* modo privado */ }
+          nota.remove();
+        },
+      },
+    })
+  );
+
+  $('resumen').append(nota);
 }
 
 /* =====================================================================
@@ -347,15 +401,35 @@ function pintarPromociones() {
           el('strong', { texto: p.titulo }),
           el('p', { clase: 'texto-sm', texto: p.cuerpo, style: 'margin:.25rem 0 0' })
         ),
+        // LA INSIGNIA DISTINGUE LOS DOS DESENLACES, y antes no.
+        //
+        // Decía «✓ Enviada» en verde en cuanto la promoción salía, contase o no
+        // con Firebase. Sin credenciales de servidor eso significa que quedó en
+        // la bandeja de la aplicación y que NADIE recibió un aviso en el móvil,
+        // pero la ficha afirmaba lo contrario para siempre. El aviso del momento
+        // sí lo explicaba, solo que se desvanecía a los nueve segundos.
         p.enviadaEn
-          ? el('span', { clase: 'insignia insignia--exito' }, '✓ Enviada')
+          ? (p.totalPush > 0
+              ? el('span', { clase: 'insignia insignia--exito' }, '✓ Enviada')
+              : el('span', { clase: 'insignia insignia--info' }, '✓ En la bandeja'))
           : p.activa
             ? el('span', { clase: 'insignia insignia--info' }, '○ Sin enviar')
             : el('span', { clase: 'insignia insignia--neutra' }, '○ Inactiva')
       ),
       el('p', { clase: 'texto-sm texto-tenue', style: 'margin:.5rem 0 0' },
         p.enviadaEn
-          ? `Enviada el ${formatearFecha(p.enviadaEn)} a ${p.totalEnviados} cliente(s).`
+          ? `Enviada el ${formatearFecha(p.enviadaEn)}. ` +
+            `En la bandeja de ${p.totalEnviados} cliente(s); ` +
+            // «Aceptado por Firebase» y NO «entregado», que es lo que decía
+            // antes. Un 200 de FCM significa que Google se hizo cargo del
+            // mensaje, no que haya llegado a un teléfono: si el móvil está sin
+            // red, o el fabricante bloquea el arranque en segundo plano —Xiaomi
+            // y Huawei lo hacen por defecto—, el mensaje se queda en cola o se
+            // descarta y aquí no hay forma de enterarse. Prometer «entregado»
+            // sería repetir el mismo error que este contador vino a arreglar.
+            (p.totalPush > 0
+              ? `${p.totalPush} aviso(s) aceptado(s) por Firebase para envío al móvil.`
+              : 'ninguno salió al móvil (push sin configurar).')
           : `Creada el ${formatearFecha(p.creadoEn)}${p.creadaPor ? ` por ${p.creadaPor}` : ''}.`
       ),
       p.vigenteHasta

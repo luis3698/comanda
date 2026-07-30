@@ -12,6 +12,7 @@ import { errores, asyncHandler } from '../middleware/errores.js';
 import { requiereAutenticacion } from '../middleware/auth.js';
 import { requierePermiso } from '../middleware/permisos.js';
 import { auditar } from '../servicios/auditoria.js';
+import { invalidar as invalidarPermisos } from '../servicios/permisosRol.js';
 
 const router = Router();
 
@@ -185,6 +186,10 @@ router.delete('/:id', requierePermiso(PERMISO_LLAVE), asyncHandler(async (req, r
     });
   });
 
+  // El DELETE arrastra sus filas de rol_permiso por la clave foranea en
+  // cascada, asi que la entrada cacheada de ese rol ya no describe nada.
+  invalidarPermisos(id);
+
   return res.json({ ok: true });
 }));
 
@@ -250,6 +255,12 @@ router.put('/:id/permisos', requierePermiso(PERMISO_LLAVE), asyncHandler(async (
       ipOrigen: ipDe(req),
     });
   });
+
+  // La matriz vive cacheada en memoria (servicios/permisosRol.js): se tira la
+  // entrada del rol para que la siguiente peticion lea lo recien guardado. Esto
+  // es lo que sostiene la garantia del FSD 5.1 ahora que no hay un SELECT por
+  // peticion, y de paso reajusta los permisos de los WebSocket ya abiertos.
+  invalidarPermisos(id);
 
   // No hace falta cerrar sesiones: los permisos se releen en cada peticion
   // (FSD 5.1), asi que el cambio ya afecta a la siguiente accion de todos.

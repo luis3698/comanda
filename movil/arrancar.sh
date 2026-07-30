@@ -12,13 +12,24 @@
 #
 # Aquí cada paso se COMPRUEBA y, si falla, el guion se para y dice qué hacer.
 #
+# Sirve para las tres formas de tener un Android delante: por cable, por wifi y
+# emulador. Si no hay ninguna, arranca un emulador él mismo.
+#
 # Uso:   cd movil && ./arrancar.sh
 #        ./arrancar.sh --sin-compilar     (solo servidor y puente; no toca el APK)
+#        ./arrancar.sh --sin-emulador     (no arranca un emulador si no hay nada)
 #
 set -euo pipefail
 
 SIN_COMPILAR=0
-[[ "${1:-}" == "--sin-compilar" ]] && SIN_COMPILAR=1
+SIN_EMULADOR=0
+for arg in "$@"; do
+    case "$arg" in
+        --sin-compilar) SIN_COMPILAR=1 ;;
+        --sin-emulador) SIN_EMULADOR=1 ;;
+        *) echo "Opción desconocida: $arg" >&2; exit 1 ;;
+    esac
+done
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOVIL="$RAIZ/movil"
@@ -158,38 +169,144 @@ fi
 # =====================================================================
 paso "Preparando el móvil"
 
-# Las conexiones inalámbricas se quitan ANTES de contar: un móvil que está a la
-# vez por cable y por wifi aparece dos veces, y con dos entradas `adb reverse`
-# falla. Es exactamente el fallo que motivó este guion.
-adb disconnect >/dev/null 2>&1 || true
+# Cuenta líneas de una lista que puede venir vacía.
+contar() { [[ -z "$1" ]] && echo 0 || echo "$1" | grep -c .; }
 
-DISPOSITIVOS="$(adb devices | awk 'NR>1 && $2=="device" {print $1}')"
-CUANTOS="$(echo "$DISPOSITIVOS" | grep -c . || true)"
+# Clasifica lo conectado por TRANSPORTE, que es lo que decide cómo tratarlo:
+#
+#   · cable        serie a secas             ej. U8AEV8PFPBDEDIPN
+#   · inalámbrico  ip:puerto, o mDNS         ej. 192.168.1.7:5555
+#                                                adb-U8AEV…._adb-tls-connect._tcp
+#   · emulador     emulator-NNNN             ej. emulator-5554
+#
+# La distinción importa porque `adb disconnect` SOLO afecta a los inalámbricos.
+clasificar() {
+    local todos
+    todos="$(adb devices | awk 'NR>1 && $2=="device" {print $1}')"
+    EMULADOR="$(echo "$todos"    | grep -E '^emulator-' || true)"
+    INALAMBRICO="$(echo "$todos" | grep -E ':[0-9]+$|_adb-tls-connect\._tcp' || true)"
+    CABLE="$(echo "$todos"       | grep -vE '^emulator-|:[0-9]+$|_adb-tls-connect\._tcp' || true)"
+    TODOS="$todos"
+    N_TOTAL="$(contar "$todos")"
+}
 
-if [[ "$CUANTOS" -eq 0 ]]; then
+clasificar
+
+# EL DESEMPATE, QUE ANTES ERA UN `adb disconnect` A SECAS
+#
+# El caso que motivó este guion: el MISMO teléfono conectado a la vez por cable
+# y por wifi aparece dos veces, y con dos entradas `adb reverse` falla con «more
+# than one device». La solución era `adb disconnect` antes de contar.
+#
+# Pero `adb disconnect` sin argumentos desconecta TODOS los dispositivos TCP/IP
+# —lo dice su propia ayuda—, así que a quien tuviera el móvil SOLO por wifi se
+# lo tiraba, y el guion moría acto seguido con «no hay ningún dispositivo
+# conectado» mandándole a buscar un cable que no necesitaba.
+#
+# Ahora la conexión inalámbrica solo se cierra cuando de verdad estorba: cuando
+# hay también una por cable. Si el wifi es el único transporte, se usa tal cual;
+# `adb reverse` funciona igual por wifi que por USB.
+if [[ "$(contar "$CABLE")" -ge 1 && "$(contar "$INALAMBRICO")" -ge 1 ]]; then
+    aviso "el móvil está por cable Y por wifi a la vez: se cierra la conexión inalámbrica"
+    adb disconnect >/dev/null 2>&1 || true
+    clasificar
+fi
+
+# ---------------------------------------------------------------------
+# Sin nada conectado: se arranca un emulador en lugar de rendirse.
+#
+# Antes esto era un `morir` que decía «o arranque un emulador desde Android
+# Studio», es decir: deje esto, abra otro programa, espere, y vuelva. Si hay un
+# AVD definido no hace falta —el binario `emulator` lo arranca igual de bien—,
+# y así el guion cumple lo que promete: levantarlo TODO.
+# ---------------------------------------------------------------------
+arrancar_emulador() {
+    command -v emulator >/dev/null 2>&1 || {
+        for candidato in \
+            "${ANDROID_HOME:-}/emulator" \
+            "${ANDROID_SDK_ROOT:-}/emulator" \
+            "$HOME/AppData/Local/Android/Sdk/emulator" \
+            "$HOME/Library/Android/sdk/emulator" \
+            "$HOME/Android/Sdk/emulator"
+        do
+            if [[ -n "$candidato" && ( -x "$candidato/emulator" || -x "$candidato/emulator.exe" ) ]]; then
+                export PATH="$PATH:$candidato"
+                break
+            fi
+        done
+    }
+    command -v emulator >/dev/null 2>&1 || return 1
+
+    local avd
+    avd="$(emulator -list-avds 2>/dev/null | head -1)"
+    [[ -n "$avd" ]] || return 1
+
+    aviso "no hay ningún dispositivo; arrancando el emulador «$avd»"
+
+    # Desatendido y en segundo plano. -no-snapshot-save evita que al cerrarlo
+    # escriba una instantánea de varios GB que nadie pidió.
+    emulator -avd "$avd" -no-snapshot-save >/dev/null 2>&1 &
+
+    # Se espera a sys.boot_completed y NO a que adb lo liste: aparece en la
+    # lista mucho antes de haber terminado de arrancar, y un `install` en ese
+    # hueco falla con un error que no menciona el arranque.
+    printf "  esperando a que termine de arrancar"
+    for _ in $(seq 1 120); do
+        if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+            echo ""
+            return 0
+        fi
+        printf "."
+        sleep 2
+    done
+    echo ""
+    return 1
+}
+
+if [[ "$N_TOTAL" -eq 0 ]]; then
     NO_AUTORIZADOS="$(adb devices | awk 'NR>1 && $2=="unauthorized" {print $1}')"
     if [[ -n "$NO_AUTORIZADOS" ]]; then
         morir "El móvil está conectado pero SIN AUTORIZAR." \
               "Mire la pantalla del teléfono y acepte «¿Permitir depuración USB?»." \
               "Marque «Permitir siempre» para no repetirlo."
     fi
-    morir "No hay ningún dispositivo conectado." \
-          "· Conecte el móvil por cable (uno de datos, no solo de carga)." \
-          "· Active Opciones de desarrollador → Depuración por USB." \
-          "· En Xiaomi/POCO active además «Instalar vía USB»." \
-          "· O arranque un emulador desde Android Studio."
+
+    if [[ $SIN_EMULADOR -eq 0 ]] && arrancar_emulador; then
+        clasificar
+        bien "emulador arrancado"
+    fi
 fi
 
-if [[ "$CUANTOS" -gt 1 ]]; then
-    morir "Hay $CUANTOS dispositivos conectados y no sé a cuál apuntar." \
+if [[ "$N_TOTAL" -eq 0 ]]; then
+    morir "No hay ningún dispositivo conectado ni pude arrancar un emulador." \
+          "Cualquiera de estas tres vale:" \
+          "" \
+          "· Cable: uno de datos (no solo de carga), con Opciones de" \
+          "  desarrollador → Depuración por USB. En Xiaomi/POCO active" \
+          "  además «Instalar vía USB»." \
+          "· Wifi:  Depuración inalámbrica en el móvil y, en el PC," \
+          "         adb pair IP:PUERTO   y luego   adb connect IP:PUERTO" \
+          "· Emulador: cree un AVD en Android Studio (Device Manager)."
+fi
+
+if [[ "$N_TOTAL" -gt 1 ]]; then
+    morir "Hay $N_TOTAL dispositivos conectados y no sé a cuál apuntar." \
           "$(adb devices | tail -n +2)" \
           "" \
           "Deje solo uno: desenchufe los demás o cierre el emulador."
 fi
 
-SERIE="$DISPOSITIVOS"
+SERIE="$TODOS"
+
+# Cómo está enganchado, porque cambia qué hacer si algo va mal luego.
+case "$SERIE" in
+    emulator-*)                       VIA="emulador" ;;
+    *:[0-9]*|*_adb-tls-connect._tcp)  VIA="wifi" ;;
+    *)                                VIA="cable" ;;
+esac
+
 MODELO="$(adb -s "$SERIE" shell getprop ro.product.model 2>/dev/null | tr -d '\r')"
-bien "${MODELO:-dispositivo} ($SERIE)"
+bien "${MODELO:-dispositivo} por $VIA ($SERIE)"
 
 adb -s "$SERIE" reverse tcp:3000 tcp:3000 >/dev/null || morir \
     "No pude abrir el puente al servidor." \
@@ -221,14 +338,37 @@ else
 fi
 
 paso "Abriendo la app"
-adb -s "$SERIE" shell am start -n co.sigr.cliente/.MainActivity >/dev/null
+
+# Se comprueba que el paquete ESTÉ antes de intentar abrirlo. Es el desenlace
+# natural de --sin-compilar sobre un móvil donde la app nunca se instaló: sin
+# esto, `am start` responde «Error type 3 · Activity class does not exist», que
+# suena a que la app está rota cuando lo único que pasa es que no está puesta.
+if ! adb -s "$SERIE" shell pm list packages 2>/dev/null | tr -d '\r' | grep -q '^package:co.sigr.cliente$'; then
+    morir "La app no está instalada en ${MODELO:-el dispositivo}." \
+          "El puente ya quedó abierto; solo falta instalarla. Ejecute esto mismo" \
+          "sin '--sin-compilar':" \
+          "" \
+          "    ./arrancar.sh"
+fi
+
+adb -s "$SERIE" shell am start -n co.sigr.cliente/.MainActivity >/dev/null 2>&1 || morir \
+    "La app está instalada pero no arrancó." \
+    "Ábrala a mano en el móvil. Si tampoco así, reinstálela:" \
+    "" \
+    "    ./arrancar.sh"
 bien "SIGR arrancando en el móvil"
 
 echo ""
 echo "${VERDE}${NEGRITA}Todo listo.${FIN}"
 echo "  Web:  http://localhost:3000"
-echo "  App:  abierta en ${MODELO:-el dispositivo}"
+echo "  App:  abierta en ${MODELO:-el dispositivo} (por $VIA)"
 echo ""
-echo "  ${AMARILLO}El puente se cae al desconectar el cable.${FIN} Si eso pasa, vuelva a"
-echo "  ejecutar este guion: ./arrancar.sh --sin-compilar"
+# El aviso se ajusta al transporte: cada uno se cae por un motivo distinto y
+# decir "desconectar el cable" a quien va por wifi solo despista.
+case "$VIA" in
+    cable) echo "  ${AMARILLO}El puente se cae al desconectar el cable.${FIN}" ;;
+    wifi)  echo "  ${AMARILLO}El puente se cae si el móvil sale de la wifi o se duerme.${FIN}" ;;
+    emulador) echo "  ${AMARILLO}El puente se cae al cerrar el emulador.${FIN}" ;;
+esac
+echo "  Si eso pasa, vuelva a ejecutar: ./arrancar.sh --sin-compilar"
 echo ""

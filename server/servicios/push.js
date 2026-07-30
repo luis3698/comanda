@@ -314,6 +314,47 @@ export async function marcarTodasLeidas(idCliente) {
 }
 
 /**
+ * Borra una notificacion de la bandeja del cliente.
+ *
+ * SE BORRA DE VERDAD, y aqui si es correcto.
+ *
+ * En este sistema casi nada se elimina -- las facturas no se pueden borrar ni
+ * con privilegios de base de datos, las mesas se retiran, las cuentas se
+ * anonimizan --, pero una notificacion no es un hecho contable: es una COPIA de
+ * un aviso cuyo original vive en la reserva o en el pedido al que se refiere.
+ * Tirar el aviso de "su pedido va en camino" no borra el pedido ni su
+ * trazabilidad. Guardar para siempre avisos que el cliente ya descarto seria
+ * acumular datos personales sin ninguna razon.
+ *
+ * EL FILTRO POR CLIENTE ES LA AUTORIZACION, igual que en marcarLeida: sin el,
+ * cualquiera con sesion podria borrar los avisos de otro pasando su id. Va en
+ * el WHERE y no en una comprobacion previa a proposito -- una sola consulta que
+ * no puede olvidarse de comprobar.
+ */
+export async function borrarNotificacion(idCliente, idNotificacion) {
+  const [r] = await pool.execute(
+    'DELETE FROM notificacion_cliente WHERE id_notificacion = ? AND id_cliente = ?',
+    [idNotificacion, idCliente]
+  );
+  return { borrada: r.affectedRows > 0 };
+}
+
+/**
+ * Vacia la bandeja dejando lo que el cliente todavia no ha leido.
+ *
+ * Lo no leido se conserva a proposito: "limpiar" no puede significar "perderse
+ * un aviso que aun no habia visto". Quien quiera deshacerse de uno sin leer,
+ * lo desliza.
+ */
+export async function borrarLeidas(idCliente) {
+  const [r] = await pool.execute(
+    'DELETE FROM notificacion_cliente WHERE id_cliente = ? AND leida = TRUE',
+    [idCliente]
+  );
+  return { borradas: r.affectedRows };
+}
+
+/**
  * Registra (o reasigna) un token de dispositivo.
  *
  * FCM reutiliza tokens entre instalaciones: el mismo valor puede reaparecer
