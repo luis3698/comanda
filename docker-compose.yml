@@ -37,9 +37,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # TODO el .env entra en el contenedor.
+    #
+    # Antes las variables se enumeraban una a una aqui abajo, y cualquiera que
+    # no estuviera en esa lista se ignoraba EN SILENCIO: se configuraba en el
+    # .env, el servidor de desarrollo la respetaba y el contenedor no. Paso con
+    # las credenciales de FCM -- el push quedaba "configurado" y el contenedor
+    # seguia avisando de que no lo estaba -- y afectaba igual a MAPA_*,
+    # BCRYPT_COSTO, SESION_HORAS y COOKIE_SEGURA.
+    #
+    # Con env_file no hay lista que mantener: una variable nueva en .env llega
+    # sola. Lo de `environment` de abajo sigue mandando, porque en Compose tiene
+    # prioridad sobre env_file, y es justo lo que hace falta para las tres que
+    # DENTRO de la red de Docker valen otra cosa.
+    env_file:
+      - .env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
+      # Dentro de la red de Docker la base es el servicio "db" en el 3306, no
+      # el localhost:3307 que ve el anfitrion. Estas tres SIEMPRE ganan al .env.
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-sigr}
@@ -54,9 +71,16 @@ services:
     # de la imagen, que el Dockerfile ya deja como node:node.
     volumes:
       - sigr_imagenes:/app/public/uploads
+      # Cache de teselas del mapa. Por la misma razon que las imagenes: sin el
+      # volumen, un "up --build" la vacia y el mapa vuelve a descargar cada
+      # tesela de OpenStreetMap desde cero. La diferencia es que perder esta
+      # cache no rompe nada -- se rellena sola -- pero castiga a un servicio
+      # publico gratuito, que es lo que su politica de uso pide evitar.
+      - sigr_teselas:/app/.cache/teselas
     ports:
       - "${PORT_HOST:-3000}:3000"
 
 volumes:
   sigr_datos:
   sigr_imagenes:
+  sigr_teselas:

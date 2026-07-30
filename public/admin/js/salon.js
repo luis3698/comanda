@@ -45,7 +45,22 @@ const estado = {
   mesas: [],
   /** Copia tal como esta en el servidor, para poder descartar. */
   original: [],
+  /**
+   * Mesa cuyas propiedades se editan en el panel lateral.
+   *
+   * Con varias mesas seleccionadas es la última que se tocó: el panel edita
+   * una sola, porque cambiar el número o la forma de un grupo entero no tiene
+   * sentido (el número es único por zona).
+   */
   seleccionada: null,
+  /**
+   * Selección múltiple: conjunto de `idLocal`.
+   *
+   * Se guarda aparte de `seleccionada` en vez de sustituirla porque son dos
+   * cosas distintas: esta decide qué se resalta y qué se borra en lote;
+   * aquella, qué se edita en el panel. Siempre contiene a `seleccionada`.
+   */
+  seleccion: new Set(),
   contadorNuevas: 0,
 };
 
@@ -124,6 +139,7 @@ async function seleccionarZona(zona) {
   estado.mesas = zona.mesas.map((m) => ({ ...m }));
   estado.original = zona.mesas.map((m) => ({ ...m }));
   estado.seleccionada = null;
+  estado.seleccion.clear();
 
   $('zona-titulo').textContent = zona.nombre;
   pintarZonas();
@@ -164,12 +180,16 @@ function pintarLienzo() {
   }
 
   reemplazar(lienzo, ...estado.mesas.map((m) => {
-    const seleccionada = estado.seleccionada === m.idLocal;
+    const enSeleccion = estado.seleccion.has(m.idLocal);
+    // La "principal" es la que edita el panel de propiedades. Se marca aparte
+    // para que, con varias seleccionadas, se vea cuál se está editando.
+    const esPrincipal = estado.seleccionada === m.idLocal;
 
     const nodo = el('button', {
       clase: [
         'mesa', `mesa--${m.forma}`,
-        seleccionada ? 'mesa--seleccionada' : '',
+        enSeleccion ? 'mesa--seleccionada' : '',
+        esPrincipal && estado.seleccion.size > 1 ? 'mesa--principal' : '',
         m.conOrdenAbierta ? 'mesa--ocupada' : '',
         m.esNueva ? 'mesa--nueva' : '',
       ].filter(Boolean).join(' '),
@@ -180,11 +200,20 @@ function pintarLienzo() {
         // sin depender del color (6.4).
         'aria-label': `Mesa ${m.numero}, ${m.forma}, capacidad ${m.capacidad}` +
                       (m.conOrdenAbierta ? ', con comanda abierta' : '') +
-                      (seleccionada ? '. Seleccionada' : ''),
-        'aria-pressed': String(seleccionada),
+                      (enSeleccion ? '. Seleccionada' : ''),
+        'aria-pressed': String(enSeleccion),
+        // Lo lee el repintado rápido del rectángulo de selección, que cambia
+        // clases sin recrear los nodos.
+        'data-id-local': String(m.idLocal),
       },
       on: {
-        click: (e) => { e.preventDefault(); seleccionarMesa(m.idLocal); },
+        // Ctrl (o Cmd en Mac) y Shift añaden o quitan de la selección en vez
+        // de reemplazarla, que es la convención de cualquier editor gráfico.
+        click: (e) => {
+          e.preventDefault();
+          if (e.ctrlKey || e.metaKey || e.shiftKey) alternarEnSeleccion(m.idLocal);
+          else seleccionarMesa(m.idLocal);
+        },
         mousedown: (e) => iniciarArrastre(e, m),
         touchstart: (e) => iniciarArrastre(e, m),
         keydown: (e) => moverConTeclado(e, m),
@@ -200,10 +229,51 @@ function pintarLienzo() {
   }));
 }
 
+/** Selección exclusiva: descarta lo anterior y deja solo esta mesa. */
 function seleccionarMesa(idLocal) {
   estado.seleccionada = idLocal;
+  estado.seleccion = new Set(idLocal === null ? [] : [idLocal]);
   pintarLienzo();
   pintarPropiedades();
+  pintarAccionesSeleccion();
+}
+
+/** Añade o quita una mesa de la selección, sin tocar el resto. */
+function alternarEnSeleccion(idLocal) {
+  if (estado.seleccion.has(idLocal)) {
+    estado.seleccion.delete(idLocal);
+    // Si se quitó la que editaba el panel, pasa a editarse otra cualquiera de
+    // las que quedan: dejar el panel apuntando a una mesa no seleccionada
+    // confundiría sobre qué se está tocando.
+    if (estado.seleccionada === idLocal) {
+      estado.seleccionada = estado.seleccion.values().next().value ?? null;
+    }
+  } else {
+    estado.seleccion.add(idLocal);
+    estado.seleccionada = idLocal;
+  }
+  pintarLienzo();
+  pintarPropiedades();
+  pintarAccionesSeleccion();
+}
+
+/** Vacía la selección. */
+function limpiarSeleccion() {
+  estado.seleccionada = null;
+  estado.seleccion.clear();
+  pintarLienzo();
+  pintarPropiedades();
+  pintarAccionesSeleccion();
+}
+
+/** Selecciona TODAS las mesas de la zona. */
+function seleccionarTodas() {
+  if (!puedeEditar || !estado.mesas.length) return;
+  estado.seleccion = new Set(estado.mesas.map((m) => m.idLocal));
+  estado.seleccionada = estado.mesas[0].idLocal;
+  pintarLienzo();
+  pintarPropiedades();
+  pintarAccionesSeleccion();
 }
 
 /* ---------------------------------------------------------------
@@ -546,10 +616,268 @@ async function quitarMesa(mesa) {
 
   estado.mesas = estado.mesas.filter((m) => m.idLocal !== mesa.idLocal);
   estado.seleccionada = null;
+  estado.seleccion.clear();
   pintarLienzo();
   pintarPropiedades();
   marcarCambio();
 }
+
+/* ---------------------------------------------------------------
+   Selección por arrastre sobre el lienzo (rectángulo elástico)
+
+   Arrastrar sobre una zona VACÍA del lienzo dibuja un rectángulo y selecciona
+   todas las mesas que toca. Arrastrar sobre una mesa la mueve, como hasta
+   ahora: el gesto se decide por dónde empieza, que es lo que hace cualquier
+   editor gráfico.
+
+   NO ES LA ÚNICA VÍA (README «Accesibilidad», FSD 6.4). Sin ratón se llega a lo
+   mismo: Tab entre las mesas, Ctrl+Espacio para ir sumándolas, Ctrl+A para
+   todas, Supr para quitarlas. El rectángulo es comodidad, no requisito.
+   --------------------------------------------------------------- */
+
+/** Rectángulo visible mientras se arrastra. Se crea y se destruye en el gesto. */
+let nodoRectangulo = null;
+
+function iniciarSeleccionPorArrastre(evento) {
+  if (!puedeEditar) return;
+  if (evento.button !== 0) return;
+  // Si el gesto empieza encima de una mesa es un movimiento, no una selección.
+  if (evento.target.closest('.mesa')) return;
+
+  evento.preventDefault();
+  const rect = lienzo.getBoundingClientRect();
+  const inicioX = evento.clientX - rect.left;
+  const inicioY = evento.clientY - rect.top;
+
+  // Sin Ctrl ni Shift el arrastre empieza de cero. Con ellos suma a lo ya
+  // seleccionado, lo que permite juntar dos grupos separados del plano.
+  const acumula = evento.ctrlKey || evento.metaKey || evento.shiftKey;
+  const previa = acumula ? new Set(estado.seleccion) : new Set();
+
+  let arrastro = false;
+
+  const mover = (e) => {
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Umbral de 4 px: evita que un clic con la mano poco firme se interprete
+    // como arrastre y cambie la selección sin querer.
+    if (!arrastro && Math.abs(x - inicioX) < 4 && Math.abs(y - inicioY) < 4) return;
+
+    if (!arrastro) {
+      arrastro = true;
+      nodoRectangulo = el('div', { clase: 'lienzo__seleccion' });
+      lienzo.append(nodoRectangulo);
+      lienzo.classList.add('lienzo--seleccionando');
+    }
+
+    const izq = Math.min(inicioX, x);
+    const arr = Math.min(inicioY, y);
+    const ancho = Math.abs(x - inicioX);
+    const alto = Math.abs(y - inicioY);
+
+    Object.assign(nodoRectangulo.style, {
+      left: `${izq}px`, top: `${arr}px`, width: `${ancho}px`, height: `${alto}px`,
+    });
+
+    // Las mesas guardan su posición en % del lienzo y el rectángulo está en
+    // píxeles: hay que llevarlo al mismo sistema para poder compararlos.
+    const caja = {
+      x1: (izq / rect.width) * 100,
+      y1: (arr / rect.height) * 100,
+      x2: ((izq + ancho) / rect.width) * 100,
+      y2: ((arr + alto) / rect.height) * 100,
+    };
+
+    const dentro = estado.mesas.filter((m) => seSolapan(m, caja));
+    estado.seleccion = new Set([...previa, ...dentro.map((m) => m.idLocal)]);
+
+    // Se cambian solo las clases, sin repintar el lienzo: recrear los nodos en
+    // cada mousemove destruiría el rectángulo que se está dibujando.
+    for (const nodo of lienzo.querySelectorAll('.mesa')) {
+      const marcada = dentro.some((m) => String(m.idLocal) === nodo.dataset.idLocal) ||
+        [...previa].some((id) => String(id) === nodo.dataset.idLocal);
+      nodo.classList.toggle('mesa--seleccionada', marcada);
+      nodo.setAttribute('aria-pressed', String(marcada));
+    }
+  };
+
+  const soltar = () => {
+    document.removeEventListener('mousemove', mover);
+    document.removeEventListener('mouseup', soltar);
+    nodoRectangulo?.remove();
+    nodoRectangulo = null;
+    lienzo.classList.remove('lienzo--seleccionando');
+
+    if (!arrastro) {
+      // Fue un clic en el vacío: se entiende como "deseleccionar todo".
+      if (!acumula) limpiarSeleccion();
+      return;
+    }
+
+    // La principal pasa a ser una de las seleccionadas: dejar el panel de
+    // propiedades apuntando a una mesa que ya no está marcada confundiría
+    // sobre qué se está editando.
+    if (!estado.seleccion.has(estado.seleccionada)) {
+      estado.seleccionada = estado.seleccion.values().next().value ?? null;
+    }
+    pintarLienzo();
+    pintarPropiedades();
+    pintarAccionesSeleccion();
+  };
+
+  document.addEventListener('mousemove', mover);
+  document.addEventListener('mouseup', soltar);
+}
+
+/** ¿La mesa toca el rectángulo? Basta con que se solapen, no con contenerla. */
+function seSolapan(mesa, caja) {
+  return mesa.posX < caja.x2 && mesa.posX + mesa.ancho > caja.x1 &&
+         mesa.posY < caja.y2 && mesa.posY + mesa.alto > caja.y1;
+}
+
+lienzo.addEventListener('mousedown', iniciarSeleccionPorArrastre);
+
+/* ---------------------------------------------------------------
+   Barra de selección múltiple
+   --------------------------------------------------------------- */
+
+/**
+ * Barra flotante con lo que se puede hacer con la selección.
+ *
+ * Solo aparece con dos o más mesas: con una sola, el panel de propiedades ya
+ * tiene su botón de quitar y otra barra sería ruido.
+ */
+function pintarAccionesSeleccion() {
+  const barra = $('barra-seleccion');
+  if (!barra) return;
+
+  const n = estado.seleccion.size;
+  const visible = puedeEditar && n > 1;
+  barra.classList.toggle('oculto', !visible);
+  if (!visible) return;
+
+  const mesas = estado.mesas.filter((m) => estado.seleccion.has(m.idLocal));
+  const conComanda = mesas.filter((m) => m.conOrdenAbierta);
+
+  reemplazar(barra,
+    el('span', { clase: 'barra-seleccion__conteo' }, `${n} mesas seleccionadas`),
+    // Se avisa ANTES de pulsar, no después de fallar: si en el grupo hay mesas
+    // con comanda abierta, esas no se van a poder quitar.
+    conComanda.length
+      ? el('span', { clase: 'barra-seleccion__aviso' },
+          `⚠ ${conComanda.length} con comanda abierta, no se quitarán`)
+      : null,
+    el('span', { clase: 'crece' }),
+    el('button', {
+      clase: 'btn btn--secundario btn--sm',
+      attrs: { type: 'button' },
+      on: { click: limpiarSeleccion },
+    }, 'Deseleccionar'),
+    el('button', {
+      clase: 'btn btn--peligro',
+      attrs: { type: 'button' },
+      on: { click: quitarSeleccionadas },
+    }, `Quitar ${n - conComanda.length} del plano`)
+  );
+}
+
+/**
+ * Quita del plano todas las mesas seleccionadas de un solo golpe.
+ *
+ * UNA SOLA CONFIRMACIÓN para todo el grupo: preguntar mesa por mesa
+ * convertiría esta función en algo más lento que borrarlas de una en una, que
+ * es justo lo que se quiere evitar.
+ *
+ * Las que tienen comanda abierta se saltan en lugar de abortar la operación
+ * entera: quitar las otras diez sigue siendo lo que el usuario quería.
+ */
+async function quitarSeleccionadas() {
+  if (!puedeEditar) return;
+
+  const mesas = estado.mesas.filter((m) => estado.seleccion.has(m.idLocal));
+  const quitables = mesas.filter((m) => !m.conOrdenAbierta);
+  const bloqueadas = mesas.filter((m) => m.conOrdenAbierta);
+
+  if (!quitables.length) {
+    aviso('Todas las mesas seleccionadas tienen una comanda abierta. Ciérrelas antes de quitarlas.',
+      'error', 7000);
+    return;
+  }
+
+  const nombres = quitables.map((m) => m.numero).join(', ');
+  const ok = await confirmar({
+    titulo: `Quitar ${quitables.length} mesa(s) del plano`,
+    mensaje:
+      `Se quitarán: ${nombres}.` +
+      (bloqueadas.length
+        ? ` Se conservarán ${bloqueadas.map((m) => m.numero).join(', ')}, que tienen comanda abierta.`
+        : '') +
+      ' Las que tengan ventas o reservas registradas se darán de baja conservando su historial; ' +
+      'el resto se eliminarán. El cambio se aplica al guardar la distribución.',
+    textoConfirmar: `Quitar ${quitables.length}`,
+    peligro: true,
+  });
+  if (!ok) return;
+
+  const aQuitar = new Set(quitables.map((m) => m.idLocal));
+  estado.mesas = estado.mesas.filter((m) => !aQuitar.has(m.idLocal));
+
+  // Las bloqueadas siguen seleccionadas: así se ve cuáles quedaron y por qué.
+  estado.seleccion = new Set(bloqueadas.map((m) => m.idLocal));
+  estado.seleccionada = estado.seleccion.values().next().value ?? null;
+
+  pintarLienzo();
+  pintarPropiedades();
+  pintarAccionesSeleccion();
+  marcarCambio();
+
+  aviso(
+    `${quitables.length} mesa(s) quitadas del plano.` +
+    (bloqueadas.length ? ` ${bloqueadas.length} no se pudo por tener comanda abierta.` : '') +
+    ' Pulse «Guardar distribución» para aplicarlo.',
+    bloqueadas.length ? 'alerta' : 'exito', 7000
+  );
+}
+
+/* ---------------------------------------------------------------
+   Atajos de teclado sobre el plano
+
+   Es la vía SIN RATÓN a todo lo anterior, y por eso no es opcional.
+   --------------------------------------------------------------- */
+document.addEventListener('keydown', (e) => {
+  if (!puedeEditar) return;
+
+  // No se secuestra el teclado mientras se escribe en un campo.
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+  const enElPlano = lienzo.contains(e.target) || e.target === lienzo;
+
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a' && enElPlano) {
+    e.preventDefault();
+    seleccionarTodas();
+    return;
+  }
+
+  if (e.key === 'Escape' && estado.seleccion.size) {
+    limpiarSeleccion();
+    return;
+  }
+
+  // Ctrl+Espacio suma la mesa enfocada a la selección: el equivalente sin
+  // ratón al Ctrl+clic.
+  if ((e.ctrlKey || e.metaKey) && e.key === ' ' && e.target.classList?.contains('mesa')) {
+    e.preventDefault();
+    const mesa = estado.mesas.find((m) => String(m.idLocal) === e.target.dataset.idLocal);
+    if (mesa) alternarEnSeleccion(mesa.idLocal);
+    return;
+  }
+
+  if ((e.key === 'Delete' || e.key === 'Backspace') && enElPlano && estado.seleccion.size > 1) {
+    e.preventDefault();
+    quitarSeleccionadas();
+  }
+});
 
 /* ---------------------------------------------------------------
    Guardado en lote (FSD 4.1 vista 2)
@@ -593,6 +921,7 @@ $('btn-guardar').addEventListener('click', async () => {
 $('btn-descartar').addEventListener('click', async () => {
   estado.mesas = estado.original.map((m) => ({ ...m }));
   estado.seleccionada = null;
+  estado.seleccion.clear();
   olvidarConflicto();
   // Se recarga del servidor en vez de volver a la copia local: si se descarta
   // es justamente porque alguien más tocó el plano y se quiere su versión.
@@ -746,6 +1075,7 @@ async function cargarPlano(idPreferida = null) {
   estado.mesas = objetivo.mesas.map((m) => ({ ...m }));
   estado.original = objetivo.mesas.map((m) => ({ ...m }));
   estado.seleccionada = null;
+  estado.seleccion.clear();
 
   $('zona-titulo').textContent = objetivo.nombre;
   pintarZonas();

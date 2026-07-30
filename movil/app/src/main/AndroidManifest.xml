@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Red: la app habla con el servidor de SIGR. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+      Ubicación. Solo la aproximada y la precisa en primer plano, para centrar
+      el mapa donde está el cliente al elegir la dirección de entrega. NO se
+      pide ACCESS_BACKGROUND_LOCATION: la app no tiene ningún motivo para saber
+      dónde está nadie cuando está cerrada.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Avisos de reserva y pedido. Desde Android 13 hay que pedirlo en tiempo de ejecución. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- osmdroid cachea las teselas descargadas. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:name=".SigrApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_nombre"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SigrCliente"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_nombre"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.SigrCliente">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Servicio de mensajería. Se declara siempre, aunque no haya Firebase
+          configurado: sin el SDK, Android sencillamente nunca lo invoca, y así
+          el manifest no cambia según si el proyecto tiene o no
+          google-services.json.
+        -->
+        <service
+            android:name=".fcm.ServicioMensajeria"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/canal_avisos_id" />
+
+    </application>
+</manifest>

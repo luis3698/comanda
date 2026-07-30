@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Política de red de PRODUCCIÓN.
+
+  HTTPS obligatorio, sin excepciones. Desde Android 9 el tráfico sin cifrar
+  está bloqueado por defecto y aquí no se abre ninguna rendija: el cliente que
+  descarga la app manda su cédula, su contraseña, su dirección de casa y su
+  comprobante de pago, y nada de eso viaja en claro.
+
+  Las pruebas contra un PC de la red local NO se hacen aquí. Existe un archivo
+  aparte en `app/src/debug/res/xml/` que solo se aplica a las compilaciones de
+  depuración: Gradle da prioridad al recurso del build type sobre el de main.
+  Así se prueba sin tocar este archivo y sin riesgo de publicar una app con
+  cleartext abierto por un descuido.
+-->
+<network-security-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+</network-security-config>

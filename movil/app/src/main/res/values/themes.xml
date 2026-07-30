@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tema de arranque. Solo cubre lo que se ve ANTES de que Compose pinte la
+  primera pantalla; el resto del aspecto vive en ui/tema/Tema.kt.
+
+  El color es el mismo verde del sistema web (la variable c-primario de base.css), para
+  que la app y el backoffice se reconozcan como el mismo producto.
+-->
+<resources>
+    <style name="Theme.SigrCliente" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#0f766e</item>
+        <item name="android:navigationBarColor">#ffffff</item>
+        <item name="android:windowBackground">#f1f5f9</item>
+    </style>
+</resources>

@@ -58,6 +58,21 @@ export const errores = {
 
   reglaDeNegocio: (mensaje, datos) =>
     new ErrorAPI(422, 'regla_negocio', mensaje, datos),
+
+  // --- Canal digital (aplicacion movil de clientes) ---
+
+  // El cliente de la app no tiene sesion, no tiene una sesion caducada: son
+  // dos pantallas distintas ("inicie sesion" frente a "su sesion expiro"), y
+  // el codigo es lo que las separa.
+  clienteNoAutenticado: () =>
+    new ErrorAPI(401, 'cliente_no_autenticado', 'Inicie sesion para continuar.'),
+
+  // 503 y no 403: no es que al cliente le falte permiso, es que el servicio
+  // esta apagado por decision del administrador. El 503 tambien evita que un
+  // buscador o un monitor lo interprete como un fallo permanente.
+  appDesactivada: (mensaje) =>
+    new ErrorAPI(503, 'app_desactivada',
+      mensaje || 'El servicio no esta disponible en este momento.'),
 };
 
 /** Ruta no encontrada. Se monta despues de todas las rutas. */

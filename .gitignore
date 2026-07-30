@@ -10,5 +10,16 @@ Thumbs.db
 # Scripts temporales de generación del manual (rutas específicas de sesión)
 scripts/_*.mjs
 
+# Caché de teselas del mapa. Se rellena sola desde OpenStreetMap.
+.cache/
+
+# El proyecto Android tiene su PROPIO .gitignore, dentro de movil/.
+# Es deliberado: esa carpeta debe poder sacarse del repositorio y seguir
+# siendo un proyecto completo, con sus reglas de ignorado incluidas.
+# Ver MOVIL.md, decisión 7.
+
 # Configuración/estado local de Claude Code
 .claude/
+
+# Copias de la base de datos: contienen datos reales.
+respaldos/

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Todos los textos van en español, igual que el resto del sistema: no hay
+  capa de internacionalización en SIGR y añadirla solo para el móvil dejaría
+  medio proyecto traducible y medio no.
+
+  Aquí viven únicamente los textos que Android necesita fuera de Compose
+  (nombre de la app, canal de notificaciones). El resto están en las pantallas.
+-->
+<resources>
+    <string name="app_nombre">SIGR</string>
+
+    <!-- Canal de notificaciones. Android 8+ exige que cada aviso pertenezca a uno. -->
+    <string name="canal_avisos_id">sigr_avisos</string>
+    <string name="canal_avisos_nombre">Reservas y pedidos</string>
+    <string name="canal_avisos_descripcion">
+        Confirmación de reservas, estado de sus pedidos a domicilio y promociones.
+    </string>
+</resources>

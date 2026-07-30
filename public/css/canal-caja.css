@@ -1,0 +1,280 @@
+/* =====================================================================
+   Reservas y domicilios en el POS del cajero.
+
+   Las dos vistas comparten estructura: una lista de tarjetas donde cada
+   una es algo que entró por la aplicación móvil y que hay que resolver.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   Globo de pendientes sobre el nav de la cabecera.
+
+   Está en TODAS las pantallas de caja, no solo en las suyas: un cajero
+   que está cobrando tiene que ver que entró una reserva sin cambiar de
+   vista. El aviso emergente desaparece; esto se queda hasta resolverlo.
+   --------------------------------------------------------------------- */
+.pos-nav__item { position: relative; }
+
+.pos-nav__globo {
+  position: absolute;
+  top: -.3rem;
+  right: -.3rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 .3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--c-error);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--c-primario-fuerte);
+}
+
+/* ---------------------------------------------------------------------
+   Filtros de estado
+   --------------------------------------------------------------------- */
+.filtros-estado {
+  display: flex;
+  gap: .3rem;
+  flex-wrap: wrap;
+}
+
+.filtro-estado {
+  min-height: var(--target-tactil);
+  padding: .45rem .9rem;
+  border: 1px solid var(--c-borde);
+  border-radius: 999px;
+  background: var(--c-superficie);
+  font: inherit;
+  font-size: .875rem;
+  color: var(--c-texto-suave);
+  cursor: pointer;
+}
+.filtro-estado--activo {
+  background: var(--c-primario);
+  border-color: var(--c-primario);
+  color: #fff;
+  font-weight: 600;
+}
+
+.canal-explicacion {
+  margin: 0 0 .75rem;
+  padding: .5rem .75rem;
+  background: var(--c-info-bg);
+  color: var(--c-info);
+  border-radius: var(--radio-sm);
+}
+
+/* ---------------------------------------------------------------------
+   Lista de tarjetas
+   --------------------------------------------------------------------- */
+.canal-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: .85rem;
+  align-items: start;
+}
+
+.canal-tarjeta {
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+/* Lo que está sin resolver se marca con una barra lateral ámbar ADEMÁS de
+   la insignia "⏳ Por resolver": el color solo no comunica el estado
+   (ACCESIBILIDAD.md). No parpadea, a diferencia de la pre-cuenta: una
+   reserva para el jueves no es una urgencia de este segundo. */
+.canal-tarjeta--urgente {
+  border-color: var(--c-alerta);
+  box-shadow: inset 4px 0 0 var(--c-alerta), var(--sombra-md);
+}
+
+.canal-tarjeta__cab {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-wrap: wrap;
+  padding: .6rem .85rem;
+  border-bottom: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+}
+.canal-tarjeta__codigo { font-weight: 700; }
+.canal-tarjeta__cuando { font-size: .8rem; color: var(--c-texto-tenue); }
+
+.canal-tarjeta__cuerpo {
+  padding: .75rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.canal-dato {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+}
+.canal-dato__etiqueta {
+  min-width: 5.5rem;
+  font-size: .8rem;
+  color: var(--c-texto-tenue);
+}
+
+.canal-tarjeta__direccion {
+  display: flex;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  background: var(--c-fondo);
+  border-radius: var(--radio-sm);
+  font-size: .9rem;
+}
+
+/* Notas del cliente: alergias, indicaciones del portero. Se destacan
+   igual que las notas de comanda en el KDS, y por el mismo motivo. */
+.canal-tarjeta__notas {
+  display: flex;
+  gap: .4rem;
+  padding: .45rem .6rem;
+  background: var(--c-alerta-bg);
+  color: var(--c-alerta);
+  border-radius: var(--radio-sm);
+  font-size: .875rem;
+}
+
+/* ---------------------------------------------------------------------
+   Líneas del pedido
+   --------------------------------------------------------------------- */
+.canal-lineas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--c-borde-suave);
+}
+.canal-lineas li {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--c-borde-suave);
+  font-size: .9rem;
+}
+.canal-lineas li:last-child { border-bottom: none; }
+.canal-lineas__cant { font-weight: 700; color: var(--c-primario); }
+
+.canal-lineas__nota {
+  display: flex;
+  gap: .3rem;
+  margin-top: .2rem;
+  font-size: .8rem;
+  color: var(--c-error);
+}
+
+/* ---------------------------------------------------------------------
+   Totales
+   --------------------------------------------------------------------- */
+.canal-totales {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .1rem .75rem;
+  margin: 0;
+  padding-top: .5rem;
+  border-top: 1px solid var(--c-borde-suave);
+  font-size: .875rem;
+}
+.canal-totales dt { color: var(--c-texto-tenue); }
+.canal-totales dd { margin: 0; text-align: right; }
+.canal-totales__total {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-texto);
+  padding-top: .25rem;
+}
+
+/* El cambio que debe llevar el repartidor. Se destaca porque sacar la
+   cuenta en la puerta es como se pierde dinero. */
+.canal-tarjeta__cambio {
+  padding: .45rem .6rem;
+  background: var(--c-info-bg);
+  color: var(--c-info);
+  border-radius: var(--radio-sm);
+  font-size: .875rem;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------
+   Acciones
+   --------------------------------------------------------------------- */
+.canal-tarjeta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: .6rem .85rem;
+  border-top: 1px solid var(--c-borde-suave);
+  background: var(--c-fondo);
+}
+/* Botones grandes: esta pantalla se usa en tablet, de pie y con prisa. */
+.canal-tarjeta__acciones .btn {
+  flex: 1 1 auto;
+  min-height: var(--target-tactil);
+}
+
+/* ---------------------------------------------------------------------
+   Una sola columna en pantallas estrechas
+   --------------------------------------------------------------------- */
+@media (max-width: 800px) {
+  .canal-lista { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------------
+   Comprobante de pago
+
+   El cajero tiene que poder LEER el valor y la fecha de la transferencia
+   antes de dejar entrar el pedido a cocina. La miniatura invita a abrirlo;
+   el modal lo enseña lo bastante grande para leerlo sin forzar la vista.
+   --------------------------------------------------------------------- */
+.comprobante-mini {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  min-height: var(--target-tactil);
+  padding: .5rem .6rem;
+  border: 1px solid var(--c-info);
+  border-radius: var(--radio-sm);
+  background: var(--c-info-bg);
+  color: var(--c-info);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.comprobante-mini img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radio-sm);
+  background: var(--c-superficie);
+  flex: 0 0 auto;
+}
+
+#modal-comprobante { max-width: min(92vw, 640px); }
+
+.comprobante-grande {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  background: var(--c-fondo);
+  border-radius: var(--radio-sm);
+}
+
+/* Un botón deshabilitado tiene que PARECER deshabilitado, o el cajero pulsa
+   una y otra vez creyendo que la pantalla no responde. */
+.canal-tarjeta__acciones .btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}

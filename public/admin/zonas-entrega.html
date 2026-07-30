@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zonas de entrega · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <!-- Leaflet servido en local. No hay CDN: el CSP solo admite 'self'.
+       Ver public/vendor/LEEME.md -->
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/css/zonas-entrega.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Configuración de cobertura de domicilios — /admin/zonas-entrega -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <h1>Zonas de entrega</h1>
+      <p class="texto-tenue texto-sm">
+        Cada zona es un círculo: un centro, un radio y un precio de envío. Cuando una
+        dirección cae dentro de varios, gana el de menor prioridad y, a igualdad, el de
+        radio más pequeño — la zona más específica.
+      </p>
+    </div>
+
+    <div class="zonas-diseno">
+      <!-- ---------------------------------------------------------------
+           Mapa
+           --------------------------------------------------------------- -->
+      <section class="tarjeta zonas-mapa" aria-labelledby="titulo-mapa">
+        <div class="tarjeta__cabecera">
+          <h2 id="titulo-mapa">Mapa de cobertura</h2>
+          <div class="fila" style="gap:.4rem">
+            <button class="btn btn--secundario btn--sm" type="button" id="btn-centrar">
+              Centrar en el local
+            </button>
+          </div>
+        </div>
+
+        <!-- El mapa es una ayuda visual, NO la única forma de trabajar: todo lo
+             que se hace aquí con el ratón se puede hacer con los campos
+             numéricos del panel derecho (ACCESIBILIDAD.md). -->
+        <div id="mapa" role="application"
+             aria-label="Mapa de zonas de entrega. Las mismas zonas se pueden editar con los campos numéricos del panel lateral."></div>
+
+        <p class="texto-tenue texto-sm zonas-mapa__ayuda" id="ayuda-mapa">
+          Pulse sobre el mapa para situar el centro de la zona que esté editando.
+        </p>
+      </section>
+
+      <!-- ---------------------------------------------------------------
+           Panel lateral
+           --------------------------------------------------------------- -->
+      <div class="zonas-panel">
+        <div role="tablist" class="pestanas-principales" aria-label="Secciones de zonas de entrega">
+          <button role="tab" type="button" class="pestana-principal pestana-principal--activa"
+                  id="tab-lista" aria-controls="panel-lista" aria-selected="true">Zonas</button>
+          <button role="tab" type="button" class="pestana-principal"
+                  id="tab-probar" aria-controls="panel-probar" aria-selected="false">Probar</button>
+        </div>
+
+        <!-- Lista de zonas + formulario -->
+        <div id="panel-lista" role="tabpanel" aria-labelledby="tab-lista">
+          <div class="fila fila--entre zonas-panel__acciones">
+            <span class="texto-tenue texto-sm" id="contador-zonas"></span>
+            <button class="btn btn--primario btn--sm" type="button" id="btn-nueva">Nueva zona</button>
+          </div>
+
+          <div id="lista-zonas" class="zonas-lista"></div>
+
+          <!-- Formulario. Inline y no en un <dialog> a propósito: hay que ver el
+               mapa mientras se ajusta el radio. -->
+          <form id="form-zona" class="tarjeta zona-form oculto" novalidate
+                aria-labelledby="titulo-form">
+            <div class="tarjeta__cabecera">
+              <h3 id="titulo-form">Nueva zona</h3>
+            </div>
+            <div class="tarjeta__cuerpo">
+              <div class="campo">
+                <label class="campo__etiqueta" for="z-nombre">
+                  Nombre <span class="campo__requerido">*</span>
+                </label>
+                <input class="campo__control" id="z-nombre" type="text" maxlength="60"
+                       autocomplete="off" placeholder="Centro, Norte, Zona ampliada…">
+                <p class="campo__error" id="e-z-nombre" role="alert"></p>
+              </div>
+
+              <fieldset class="zona-form__grupo">
+                <legend>Centro</legend>
+                <p class="campo__ayuda">
+                  Pulse en el mapa o escriba las coordenadas.
+                </p>
+                <div class="form-dos-columnas">
+                  <div class="campo">
+                    <label class="campo__etiqueta" for="z-lat">Latitud</label>
+                    <input class="campo__control mono" id="z-lat" type="number" step="0.0000001"
+                           min="-90" max="90" inputmode="decimal">
+                  </div>
+                  <div class="campo">
+                    <label class="campo__etiqueta" for="z-lng">Longitud</label>
+                    <input class="campo__control mono" id="z-lng" type="number" step="0.0000001"
+                           min="-180" max="180" inputmode="decimal">
+                  </div>
+                </div>
+                <p class="campo__error" id="e-z-centro" role="alert"></p>
+              </fieldset>
+
+              <div class="campo">
+                <label class="campo__etiqueta" for="z-radio">
+                  Radio en metros <span class="campo__requerido">*</span>
+                </label>
+                <div class="fila" style="gap:.6rem;align-items:center">
+                  <!-- El deslizador es cómodo; el campo numérico es el que
+                       garantiza que se puede ajustar sin ratón. Los dos
+                       escriben el mismo valor. -->
+                  <input id="z-radio-rango" type="range" min="100" max="20000" step="100"
+                         class="crece" aria-label="Radio en metros, control deslizante">
+                  <input class="campo__control mono zona-form__radio" id="z-radio" type="number"
+                         min="100" max="50000" step="50" inputmode="numeric">
+                </div>
+                <p class="campo__ayuda" id="z-radio-km"></p>
+                <p class="campo__error" id="e-z-radioM" role="alert"></p>
+              </div>
+
+              <div class="form-dos-columnas">
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-costo">Costo de envío</label>
+                  <input class="campo__control mono" id="z-costo" type="number" min="0" step="100"
+                         inputmode="decimal">
+                  <p class="campo__error" id="e-z-costoEnvio" role="alert"></p>
+                </div>
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-minimo">Pedido mínimo</label>
+                  <input class="campo__control mono" id="z-minimo" type="number" min="0" step="100"
+                         inputmode="decimal">
+                  <p class="campo__ayuda">0 = usar el mínimo general.</p>
+                  <p class="campo__error" id="e-z-pedidoMinimo" role="alert"></p>
+                </div>
+              </div>
+
+              <div class="form-dos-columnas">
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-tiempo">Tiempo estimado (min)</label>
+                  <input class="campo__control mono" id="z-tiempo" type="number" min="1" max="240"
+                         step="5" inputmode="numeric">
+                  <p class="campo__error" id="e-z-tiempoEstimadoMin" role="alert"></p>
+                </div>
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-prioridad">Prioridad</label>
+                  <input class="campo__control mono" id="z-prioridad" type="number" min="0" max="99"
+                         step="1" inputmode="numeric">
+                  <p class="campo__ayuda">Menor número gana el solape.</p>
+                </div>
+              </div>
+
+              <div class="form-dos-columnas">
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-color">Color en el mapa</label>
+                  <input class="campo__control zona-form__color" id="z-color" type="color">
+                </div>
+                <div class="campo">
+                  <label class="campo__etiqueta" for="z-activa">Estado</label>
+                  <select class="campo__control" id="z-activa">
+                    <option value="true">Activa · se usa para cotizar</option>
+                    <option value="false">Inactiva · no cubre nada</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="tarjeta__cabecera zona-form__pie">
+              <button class="btn btn--plano" type="button" id="btn-cancelar">Cancelar</button>
+              <div class="fila" style="gap:.4rem">
+                <button class="btn btn--peligro btn--sm oculto" type="button" id="btn-borrar">Eliminar</button>
+                <button class="btn btn--primario" type="submit" id="btn-guardar">Guardar</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Comprobador de direcciones -->
+        <div id="panel-probar" role="tabpanel" aria-labelledby="tab-probar" class="oculto">
+          <div class="tarjeta">
+            <div class="tarjeta__cabecera">
+              <h3>¿Llegamos a esta dirección?</h3>
+            </div>
+            <div class="tarjeta__cuerpo">
+              <p class="campo__ayuda">
+                Responde el servidor con la misma función que usa la aplicación al cotizar,
+                así que este resultado es exactamente lo que verá el cliente.
+              </p>
+
+              <div class="form-dos-columnas">
+                <div class="campo">
+                  <label class="campo__etiqueta" for="p-lat">Latitud</label>
+                  <input class="campo__control mono" id="p-lat" type="number" step="0.0000001"
+                         inputmode="decimal">
+                </div>
+                <div class="campo">
+                  <label class="campo__etiqueta" for="p-lng">Longitud</label>
+                  <input class="campo__control mono" id="p-lng" type="number" step="0.0000001"
+                         inputmode="decimal">
+                </div>
+              </div>
+
+              <div class="campo">
+                <label class="campo__etiqueta" for="p-subtotal">Subtotal del pedido</label>
+                <input class="campo__control mono" id="p-subtotal" type="number" min="0" step="1000"
+                       value="0" inputmode="decimal">
+                <p class="campo__ayuda">Para comprobar también el pedido mínimo.</p>
+              </div>
+
+              <button class="btn btn--primario btn--bloque" type="button" id="btn-probar">
+                Comprobar cobertura
+              </button>
+              <p class="campo__ayuda">
+                También puede pulsar en el mapa con esta pestaña abierta.
+              </p>
+            </div>
+          </div>
+
+          <div id="resultado-prueba" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- UMD, antes del módulo: expone la global L. Ver public/vendor/LEEME.md -->
+  <script src="/vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="/admin/js/zonas-entrega.js"></script>
+</body>
+</html>

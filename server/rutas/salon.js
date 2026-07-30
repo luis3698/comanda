@@ -26,6 +26,73 @@ router.use(requiereAutenticacion);
 const FORMAS = ['redonda', 'cuadrada', 'rectangular', 'barra'];
 const ESTADOS_MESA = ['libre', 'ocupada', 'precuenta', 'bloqueada'];
 
+/**
+ * Zona virtual que ancla las comandas de domicilio (ver el README).
+ *
+ * POR QUE HAY QUE PROTEGERLA DEL DISENADOR
+ * Se sembro con activa = FALSE dando por hecho que eso la mantendria fuera del
+ * plano, porque `listarSalon` filtra las zonas inactivas. Pero el disenador pide
+ * `/salon/zonas?todas=1` -- necesita ver las zonas inactivas para poder
+ * gestionarlas-- y con ese flag SI aparece, con sus 30 mesas D1..D30 dentro.
+ *
+ * Paso de verdad: se seleccionaron esas mesas y se quitaron de una vez. Las que
+ * no tenian historial se borraron y la que si lo tenia quedo de baja logica, de
+ * modo que la capacidad de domicilios se quedo en cero. El siguiente pedido que
+ * intento aceptar Caja fallo con "No hay posiciones de domicilio configuradas".
+ *
+ * No son mesas de sala: no se dibujan en ningun sitio, no se sientan clientes en
+ * ellas y borrarlas no libera nada. Lo unico que hacen es permitir que un
+ * domicilio aceptado se convierta en una `orden` real. Por eso el servidor las
+ * rechaza en bloque en lugar de confiar en que la interfaz las oculte: la UI
+ * oculta, la API revalida.
+ */
+const ZONA_DOMICILIOS = 'Domicilios';
+
+/** Corta cualquier intento de editar la zona de domicilios desde el salon. */
+function exigirZonaEditable(zona) {
+  if (zona?.nombre !== ZONA_DOMICILIOS) return;
+
+  throw errores.reglaDeNegocio(
+    'La zona "Domicilios" no se edita desde el diseñador de salón. No es una zona ' +
+    'real: son las plazas que permiten que un pedido a domicilio aceptado llegue a ' +
+    'cocina y a caja. Si la cambia, Caja dejará de poder aceptar domicilios.',
+    { motivo: 'zona_domicilios_protegida' }
+  );
+}
+
+/**
+ * Corta cualquier intento de tocar mesas concretas de la zona de domicilios.
+ *
+ * @param {object} cx     Conexion o null para usar el pool.
+ * @param {number[]} ids  Ids de mesa implicadas.
+ * @param {string} accion Verbo para el mensaje: 'eliminar', 'modificar'...
+ */
+async function exigirQueNoSeanDomicilio(cx, ids, accion = 'modificar') {
+  if (!ids.length) return;
+
+  const marcas = ids.map(() => '?').join(',');
+  const sql =
+    `SELECT m.numero FROM mesa m
+       JOIN zona z ON z.id_zona = m.id_zona
+      WHERE z.nombre = ? AND m.id_mesa IN (${marcas})
+      ORDER BY m.id_mesa`;
+  const params = [ZONA_DOMICILIOS, ...ids];
+
+  const filas = cx
+    ? (await cx.execute(sql, params))[0]
+    : await consultar(sql, params);
+
+  if (!filas.length) return;
+
+  throw errores.reglaDeNegocio(
+    `No se pueden ${accion} las posiciones de domicilio ` +
+    `(${filas.map((f) => f.numero).join(', ')}). No son mesas de la sala: son las ` +
+    'plazas que permiten que un pedido a domicilio aceptado llegue a cocina y a ' +
+    'caja. Si las quita, Caja no podra aceptar ningun domicilio.',
+    { motivo: 'zona_domicilios_protegida' }
+  );
+}
+
 function ipDe(req) {
   return (req.headers['x-forwarded-for']?.split(',')[0].trim()) || req.ip || null;
 }
@@ -61,6 +128,29 @@ async function tieneOrdenAbierta(idMesa, cx = null) {
   }
   const f = await consultarUno(sql, [idMesa]);
   return f.n > 0;
+}
+
+/**
+ * Reservas que apuntan a una mesa: cuantas siguen vivas y cuantas hay en total.
+ *
+ * POR QUE ESTO EXISTE
+ * `reserva.id_mesa` es una clave foranea a `mesa` (db/05_movil.sql), asi que
+ * una mesa reservada alguna vez NO SE PUEDE BORRAR: MySQL lo rechaza y el
+ * usuario recibia un "La operacion afecta a registros relacionados" que no
+ * decia ni que mesa era ni por que.
+ *
+ * Se distinguen los dos casos porque llevan a decisiones opuestas:
+ *   vivas > 0     -> hay clientes esperando esa mesa: no se puede quitar.
+ *   total > 0     -> solo historial: baja logica, igual que con las comandas.
+ */
+async function reservasDeMesa(idMesa, cx = null) {
+  const sql = `SELECT COUNT(*) AS total,
+                      SUM(estado IN ('pendiente','confirmada')) AS vivas
+                 FROM reserva WHERE id_mesa = ?`;
+  const fila = cx
+    ? (await cx.execute(sql, [idMesa]))[0][0]
+    : await consultarUno(sql, [idMesa]);
+  return { total: Number(fila.total), vivas: Number(fila.vivas ?? 0) };
 }
 
 /**
@@ -144,10 +234,26 @@ router.get('/zonas', requierePermiso('salon.ver'), asyncHandler(async (req, res)
   // ?todas: ese flag solo gobierna la visibilidad de las zonas.
   const soloActivas = req.query.todas !== '1';
 
+  // La zona de domicilios NUNCA sale por aqui, ni con ?todas=1.
+  //
+  // Se sembro con activa = FALSE creyendo que eso bastaba, y basta para las
+  // vistas operativas -- pero el disenador pide ?todas=1 y ahi aparecia, con sus
+  // 30 mesas D1..D30. Desde el plano parecen 30 mesas fantasma sin sitio ni
+  // sentido, y lo natural es quitarlas; hacerlo deja a Caja sin poder aceptar un
+  // solo domicilio. Ya ocurrio dos veces.
+  //
+  // Esconderla aqui, en el servidor, la retira de golpe del disenador, del
+  // comandero y del mapa del mesero. Las rutas de escritura la rechazan ademas
+  // por su cuenta (exigirZonaEditable): la UI oculta, la API revalida.
+  const filtros = [];
+  if (soloActivas) filtros.push('activa = TRUE');
+  filtros.push('nombre <> ?');
+
   const zonas = await consultar(
     `SELECT id_zona, nombre, orden_visual, activa
-       FROM zona ${soloActivas ? 'WHERE activa = TRUE' : ''}
-      ORDER BY orden_visual, nombre`
+       FROM zona WHERE ${filtros.join(' AND ')}
+      ORDER BY orden_visual, nombre`,
+    [ZONA_DOMICILIOS]
   );
 
   const mesas = await consultar(
@@ -249,6 +355,10 @@ router.put('/zonas/:id', requierePermiso('salon.gestionar'), asyncHandler(async 
   const zona = await consultarUno('SELECT id_zona, nombre FROM zona WHERE id_zona = ?', [id]);
   if (!zona) throw errores.noEncontrado('La zona');
 
+  // Renombrarla la rompería igual que borrarla: la zona se localiza POR NOMBRE
+  // desde el servicio de domicilios, no por id.
+  exigirZonaEditable(zona);
+
   if (!nombre || String(nombre).trim().length < 2) {
     throw errores.peticionInvalida('El nombre de la zona debe tener al menos 2 caracteres.',
       { campos: { nombre: 'Mínimo 2 caracteres.' } });
@@ -317,6 +427,7 @@ router.delete('/zonas/:id', requierePermiso('salon.gestionar'), asyncHandler(asy
   const id = Number(req.params.id);
   const zona = await consultarUno('SELECT id_zona, nombre FROM zona WHERE id_zona = ?', [id]);
   if (!zona) throw errores.noEncontrado('La zona');
+  exigirZonaEditable(zona);
 
   const activas = await consultarUno(
     'SELECT COUNT(*) AS n FROM mesa WHERE id_zona = ? AND activa = TRUE', [id]
@@ -405,6 +516,16 @@ router.delete('/zonas/:id', requierePermiso('salon.gestionar'), asyncHandler(asy
       `DELETE o FROM orden o JOIN mesa m ON m.id_mesa = o.id_mesa
         WHERE m.id_zona = ?`, [id]
     );
+    // Y lo mismo con las reservas: `reserva.id_mesa` tambien es clave foranea.
+    // No se borra la reserva -- eso perderia el historico del cliente y ademas
+    // rompe su vista en la aplicacion -- solo se desliga de la mesa, que es lo
+    // que impide el DELETE. La reserva conserva su codigo, su fecha y su
+    // estado; unicamente deja de decir en que mesa fue.
+    await cx.execute(
+      `UPDATE reserva r JOIN mesa m ON m.id_mesa = r.id_mesa
+          SET r.id_mesa = NULL
+        WHERE m.id_zona = ?`, [id]
+    );
     // El kardex (movimiento_inventario) no se toca: FSD 5.4, "nunca se borra".
     // Su id_referencia es polimorfico y sin FK, asi que no impide nada, y el
     // consumo de insumos que ya ocurrio sigue siendo cierto aunque la comanda
@@ -465,8 +586,11 @@ router.post('/mesas', requierePermiso('salon.gestionar'), asyncHandler(async (re
     throw errores.peticionInvalida('Revise los campos marcados.', { campos: fallos });
   }
 
-  const zona = await consultarUno('SELECT id_zona FROM zona WHERE id_zona = ?', [Number(idZona)]);
+  const zona = await consultarUno(
+    'SELECT id_zona, nombre FROM zona WHERE id_zona = ?', [Number(idZona)]
+  );
   if (!zona) throw errores.peticionInvalida('La zona indicada no existe.');
+  exigirZonaEditable(zona);
 
   const alta = await transaccion(async (cx) => {
     const r = await crearOReactivarMesa(cx, Number(idZona), req.body);
@@ -492,6 +616,7 @@ router.put('/mesas/:id', requierePermiso('salon.gestionar'), asyncHandler(async 
   const id = Number(req.params.id);
   const mesa = await consultarUno('SELECT id_mesa, numero FROM mesa WHERE id_mesa = ?', [id]);
   if (!mesa) throw errores.noEncontrado('La mesa');
+  await exigirQueNoSeanDomicilio(null, [id], 'modificar');
 
   const fallos = validarMesa(req.body ?? {});
   if (Object.keys(fallos).length) {
@@ -549,6 +674,11 @@ router.put('/zonas/:id/mesas', requierePermiso('salon.gestionar'), asyncHandler(
   const zona = await consultarUno('SELECT id_zona, nombre FROM zona WHERE id_zona = ?', [idZona]);
   if (!zona) throw errores.noEncontrado('La zona');
 
+  // El guardado en lote retira TODA mesa que no venga en el arreglo, asi que
+  // sobre esta zona seria la forma mas rapida de quedarse sin domicilios: basta
+  // con guardar una vez con el lienzo vacio.
+  exigirZonaEditable(zona);
+
   // Validacion completa ANTES de tocar nada: si la mesa 7 es invalida, no se
   // guardan las seis primeras y luego se falla.
   const numerosVistos = new Set();
@@ -590,12 +720,26 @@ router.put('/zonas/:id/mesas', requierePermiso('salon.gestionar'), asyncHandler(
         );
       }
 
-      // FSD 4.1 vista 2: una mesa con historial de ventas solo se da de baja
-      // logica. Borrarla rompería la trazabilidad de sus facturas.
+      // Una reserva viva es un compromiso con un cliente: quitar esa mesa del
+      // plano dejaria a alguien con una reserva a una mesa que ya no existe.
+      const reservas = await reservasDeMesa(ex.id_mesa, cx);
+      if (reservas.vivas > 0) {
+        throw errores.reglaDeNegocio(
+          `La mesa ${ex.numero} tiene ${reservas.vivas} reserva(s) sin resolver y no se puede ` +
+          'quitar del plano. Atiendalas o cancelelas desde Caja, o asigne esas reservas a otra mesa.',
+          { idMesa: ex.id_mesa, reservasVivas: reservas.vivas }
+        );
+      }
+
+      // FSD 4.1 vista 2: una mesa con historial solo se da de baja logica.
+      // Borrarla rompería la trazabilidad de sus facturas -- y, desde el canal
+      // digital, tambien la de sus reservas: `reserva.id_mesa` es una clave
+      // foranea, asi que el DELETE fallaria con un error de integridad que no
+      // explica nada al usuario.
       const [hist] = await cx.execute(
         'SELECT COUNT(*) AS n FROM orden WHERE id_mesa = ?', [ex.id_mesa]
       );
-      if (hist[0].n > 0) {
+      if (hist[0].n > 0 || reservas.total > 0) {
         await cx.execute('UPDATE mesa SET activa = FALSE WHERE id_mesa = ?', [ex.id_mesa]);
         desactivadas++;
       } else {
@@ -668,6 +812,7 @@ router.delete('/mesas/:id', requierePermiso('salon.gestionar'), asyncHandler(asy
   const id = Number(req.params.id);
   const mesa = await consultarUno('SELECT id_mesa, numero FROM mesa WHERE id_mesa = ?', [id]);
   if (!mesa) throw errores.noEncontrado('La mesa');
+  await exigirQueNoSeanDomicilio(null, [id], 'eliminar');
 
   if (await tieneOrdenAbierta(id)) {
     throw errores.reglaDeNegocio(
@@ -675,9 +820,21 @@ router.delete('/mesas/:id', requierePermiso('salon.gestionar'), asyncHandler(asy
     );
   }
 
+  const reservas = await reservasDeMesa(id);
+  if (reservas.vivas > 0) {
+    throw errores.reglaDeNegocio(
+      `La mesa ${mesa.numero} tiene ${reservas.vivas} reserva(s) sin resolver. ` +
+      'Atiéndalas o cancélelas desde Caja antes de eliminarla.',
+      { reservasVivas: reservas.vivas }
+    );
+  }
+
   const resultado = await transaccion(async (cx) => {
     const [hist] = await cx.execute('SELECT COUNT(*) AS n FROM orden WHERE id_mesa = ?', [id]);
-    const conHistorial = hist[0].n > 0;
+    // El historial de reservas cuenta igual que el de comandas: `reserva.id_mesa`
+    // es clave foránea, así que borrar la mesa fallaría con un error de
+    // integridad, y además esa reserva dice a qué mesa se sentó el cliente.
+    const conHistorial = hist[0].n > 0 || reservas.total > 0;
 
     if (conHistorial) {
       await cx.execute('UPDATE mesa SET activa = FALSE WHERE id_mesa = ?', [id]);

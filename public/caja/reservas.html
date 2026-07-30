@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Reservas · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/caja.css">
+  <link rel="stylesheet" href="/css/canal-caja.css">
+</head>
+<body class="caja">
+  <header class="pos-cab">
+    <span class="pos-cab__marca"><span aria-hidden="true">💳</span> POS</span>
+    <span class="pos-cab__turno" id="estado-turno">—</span>
+    <span class="pos-cab__reloj" id="reloj-pos">--:--</span>
+    <div id="indicador-conexion"></div>
+    <nav class="pos-nav" aria-label="Navegación de caja">
+      <a class="pos-nav__item" id="nav-cuentas" href="/caja/"><span aria-hidden="true">🧾</span> <span>Cuentas</span></a>
+      <a class="pos-nav__item" id="nav-reservas" href="/caja/reservas.html"><span aria-hidden="true">📅</span> <span>Reservas</span></a>
+      <a class="pos-nav__item" id="nav-domicilios" href="/caja/domicilios.html"><span aria-hidden="true">🛵</span> <span>Domicilios</span></a>
+      <a class="pos-nav__item" id="nav-turno" href="/caja/turno.html"><span aria-hidden="true">💰</span> <span>Turno</span></a>
+    </nav>
+    <span class="texto-sm" id="nombre-cajero" style="opacity:.9"></span>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir-pos">Salir</button>
+  </header>
+
+  <!-- Reservas de mesa que llegan desde la aplicación móvil -->
+  <main class="pos-main" id="contenido">
+    <div class="herramientas">
+      <div role="tablist" class="filtros-estado" aria-label="Filtrar reservas por estado">
+        <button role="tab" type="button" class="filtro-estado filtro-estado--activo"
+                id="f-vivas" aria-selected="true">Por resolver y confirmadas</button>
+        <button role="tab" type="button" class="filtro-estado"
+                id="f-pendiente" aria-selected="false">Solo pendientes</button>
+        <button role="tab" type="button" class="filtro-estado"
+                id="f-todas" aria-selected="false">Todas</button>
+      </div>
+      <span class="crece"></span>
+      <span class="insignia insignia--neutra" id="conteo-reservas">—</span>
+    </div>
+
+    <div class="canal-lista" id="lista-reservas" aria-live="polite"></div>
+  </main>
+
+  <!-- Confirmar: hay que elegir mesa, y eso no cabe en un confirm() -->
+  <dialog id="modal-confirmar" aria-labelledby="titulo-confirmar">
+    <form id="form-confirmar" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-confirmar">Confirmar la reserva</h2>
+      </div>
+      <div class="modal__cuerpo">
+        <p class="texto-sm" id="resumen-confirmar"></p>
+        <div class="campo">
+          <label class="campo__etiqueta" for="c-mesa">
+            Mesa asignada <span class="campo__requerido">*</span>
+          </label>
+          <select class="campo__control" id="c-mesa"></select>
+          <p class="campo__ayuda">
+            Solo se muestran mesas con capacidad suficiente. El estado que aparece
+            junto a cada una es el de <strong>ahora</strong>, no el de la hora reservada.
+          </p>
+          <p class="campo__error" id="e-c-mesa" role="alert"></p>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--plano" type="button" id="btn-cerrar-confirmar">Cancelar</button>
+        <button class="btn btn--primario" type="submit">Confirmar reserva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Rechazar: el motivo es obligatorio, lo lee el cliente -->
+  <dialog id="modal-rechazar" aria-labelledby="titulo-rechazar">
+    <form id="form-rechazar" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-rechazar">Rechazar la reserva</h2>
+      </div>
+      <div class="modal__cuerpo">
+        <p class="texto-sm" id="resumen-rechazar"></p>
+        <div class="campo">
+          <label class="campo__etiqueta" for="r-motivo">
+            Motivo <span class="campo__requerido">*</span>
+          </label>
+          <textarea class="campo__control" id="r-motivo" rows="3" maxlength="255"
+                    placeholder="No hay disponibilidad a esa hora…"></textarea>
+          <p class="campo__ayuda">El cliente lo recibe tal cual en su móvil.</p>
+          <p class="campo__error" id="e-r-motivo" role="alert"></p>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--plano" type="button" id="btn-cerrar-rechazar">Cancelar</button>
+        <button class="btn btn--peligro" type="submit">Rechazar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/caja/js/reservas.js"></script>
+</body>
+</html>

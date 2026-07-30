@@ -30,6 +30,17 @@ const MENU = [
     ],
   },
   {
+    // Canal hacia el comensal: la aplicación móvil y todo lo que la configura.
+    // Se separa de "Configuración" a propósito: aquello parametriza la
+    // operación interna (salón, carta, recetas); esto decide qué ve y qué
+    // puede hacer alguien de fuera del restaurante.
+    grupo: 'Canal digital',
+    items: [
+      { texto: 'Aplicación móvil', icono: '📱', href: '/admin/app-movil.html', permiso: 'config.app.ver' },
+      { texto: 'Zonas de entrega', icono: '🗺', href: '/admin/zonas-entrega.html', permiso: 'config.entregas.ver' },
+    ],
+  },
+  {
     grupo: 'Seguridad',
     items: [
       { texto: 'Usuarios', icono: '👤', href: '/admin/usuarios.html', permiso: 'seguridad.usuarios.ver' },

@@ -41,6 +41,23 @@ const TODO = args.has('--todo');
  * lo que apunta se borra antes que aquello a lo que apunta.
  */
 const OPERACION = [
+  // --- Canal digital (app móvil) ---------------------------------------
+  // Van PRIMERO por las claves foráneas: `reserva.id_mesa` y
+  // `pedido_domicilio.id_orden` apuntan a `mesa` y a `orden`, así que
+  // borrarlas después haría fallar el vaciado con un error de integridad que
+  // no explica nada. Se descubrió al añadir el canal digital: hasta entonces
+  // esta lista era correcta y dejó de serlo sin que nada avisara.
+  'notificacion_cliente',
+  'dispositivo_cliente',
+  'pedido_domicilio_detalle_modificador',
+  'pedido_domicilio_detalle',
+  'pedido_domicilio',
+  'reserva',
+  'direccion_cliente',
+  'sesion_cliente',
+  'cliente',
+
+  // --- Operación de sala ------------------------------------------------
   'pago',
   'factura_detalle',
   'factura',
@@ -79,8 +96,19 @@ const RESTO = [
 /** Nunca se tocan: sin ellas no se puede ni entrar a la aplicación. */
 const INTOCABLES = ['rol', 'permiso', 'rol_permiso', 'usuario'];
 
-/** Contadores que vuelven a empezar, para que los ids no arranquen en 47. */
+/**
+ * Contadores que vuelven a empezar, para que los ids no arranquen en 47.
+ * Las cinco son entidades auditadas: el nombre de la tabla es el mismo que
+ * `log_auditoria.entidad` usa, y de ahí sale el valor al que se reinician.
+ */
 const REINICIAR_ID = ['zona', 'mesa', 'orden', 'turno_caja', 'factura'];
+
+/**
+ * Zona virtual que ancla las comandas de domicilio (ver README, «Canal digital»).
+ * Se repone tras cada vaciado: sin ella, Caja no puede aceptar ni un pedido.
+ */
+const ZONA_DOMICILIOS = 'Domicilios';
+const POSICIONES_DOMICILIO = 30;
 
 function bandera(texto) {
   return `\n${'─'.repeat(66)}\n${texto}\n${'─'.repeat(66)}`;
@@ -194,6 +222,35 @@ try {
     console.log('  catálogo restaurado');
   }
 
+  // La zona de domicilios se REPONE SIEMPRE, con --todo o sin él.
+  //
+  // No es decoración del salón: es lo que permite que un pedido a domicilio
+  // aceptado se convierta en una `orden` y llegue a cocina y a caja. Como vive
+  // en `zona` y `mesa`, el vaciado se la llevaba por delante, y el fallo no se
+  // notaba hasta que un cajero intentaba aceptar un pedido y recibía «No hay
+  // posiciones de domicilio configuradas». Entre el vaciado y el síntoma podían
+  // pasar días, así que nadie relacionaba una cosa con la otra.
+  //
+  // Va aquí dentro de la transacción y no en un `db/05_movil.sql` a mano: el
+  // que vacía la base no tiene por qué acordarse de un paso posterior.
+  console.log('\nReponiendo las posiciones de domicilio…');
+  await bd.execute(
+    `INSERT INTO zona (nombre, orden_visual, activa) VALUES (?, 99, FALSE)`,
+    [ZONA_DOMICILIOS]
+  );
+  const [zonaDom] = await bd.execute('SELECT LAST_INSERT_ID() AS id');
+  const idZonaDom = zonaDom[0].id;
+
+  // Una sola sentencia con todos los valores: 30 viajes a la base para sembrar
+  // una zona fija serían 30 oportunidades de fallar a medias.
+  const posiciones = Array.from({ length: POSICIONES_DOMICILIO }, (_, i) => `D${i + 1}`);
+  await bd.query(
+    `INSERT INTO mesa (id_zona, numero, forma, capacidad, pos_x, pos_y, ancho, alto, estado, activa)
+     VALUES ${posiciones.map(() => '(?, ?, "cuadrada", 1, 0, 0, 5, 5, "libre", TRUE)').join(', ')}`,
+    posiciones.flatMap((n) => [idZonaDom, n])
+  );
+  console.log(`  ${POSICIONES_DOMICILIO} posiciones (D1..D${POSICIONES_DOMICILIO})`);
+
   // Red de seguridad antes de confirmar: si algo hubiera movido la conexión a
   // otra base, aquí se aborta y se deshace todo en vez de dejar los cambios
   // repartidos entre dos bases de datos.
@@ -206,8 +263,26 @@ try {
 
   // Los AUTO_INCREMENT van al final y fuera de la transacción: ALTER TABLE hace
   // commit implícito en MySQL y dentro la habría cerrado a medias.
+  //
+  // Y NO SIEMPRE VUELVEN A 1
+  // En el vaciado normal la auditoría se queda donde está (es de solo inserción)
+  // y sus filas siguen apuntando a los ids que se acaban de borrar. Si el
+  // contador volviera a 1, las facturas nuevas reestrenarían números que
+  // registros de auditoría viejos ya reclaman, y una consulta por (entidad,
+  // id_entidad) devolvería las dos vidas del mismo id mezcladas: el cobro de hoy
+  // y el de la base anterior. Así que cada tabla arranca justo después del
+  // último id que la auditoría menciona para ella.
+  //
+  // Con --todo no hace falta distinguir: log_auditoria entra en el borrado, no
+  // queda nada a lo que esquivar y el COALESCE da 1 él solo.
   for (const t of REINICIAR_ID) {
-    await bd.execute(`ALTER TABLE \`${t}\` AUTO_INCREMENT = 1`);
+    const [[a]] = await bd.execute(
+      'SELECT COALESCE(MAX(id_entidad), 0) + 1 AS siguiente FROM log_auditoria WHERE entidad = ?',
+      [t]
+    );
+    // El valor va interpolado porque MySQL no admite parámetros en ALTER TABLE;
+    // es un número que viene de la propia base, no de fuera.
+    await bd.execute(`ALTER TABLE \`${t}\` AUTO_INCREMENT = ${Number(a.siguiente)}`);
   }
 
   console.log(bandera('Listo. El salón arranca en blanco: dibújelo en Administración → Salón.'));

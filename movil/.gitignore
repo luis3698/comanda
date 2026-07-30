@@ -1,0 +1,40 @@
+# =====================================================================
+# SIGR Cliente — Android
+#
+# Este .gitignore vive DENTRO de movil/, no en la raíz del repositorio, a
+# propósito: la carpeta tiene que poder sacarse de aquí y seguir siendo un
+# proyecto completo, con sus propias reglas de ignorado incluidas.
+# =====================================================================
+
+# --- Compilación ---
+build/
+*/build/
+.gradle/
+local.properties
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# --- Firma. NUNCA se versiona una clave de firma: quien la tenga puede
+#     publicar actualizaciones de la app haciéndose pasar por el restaurante.
+*.jks
+*.keystore
+keystore.properties
+
+# --- Firebase. Lo genera cada quien desde su consola. No es secreto
+#     (viaja dentro del APK), pero es configuración de la cuenta de otro.
+google-services.json
+
+# --- Android Studio / IntelliJ ---
+.idea/
+*.iml
+captures/
+.navigation/
+output.json
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
+.kotlin/

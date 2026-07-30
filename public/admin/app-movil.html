@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aplicación móvil · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/app-movil.css">
+</head>
+<body>
+  <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+  <!-- Panel de control del canal digital — /admin/app-movil -->
+  <main class="principal" id="contenido">
+    <div class="principal__cabecera">
+      <h1>Aplicación móvil</h1>
+      <p class="texto-tenue texto-sm">
+        Desde aquí se enciende y se apaga el canal digital, se edita lo que ven los clientes
+        y se envían promociones. Los interruptores actúan en el servidor: apagar algo aquí
+        lo cierra de verdad, aunque el cliente tenga una versión antigua de la aplicación.
+      </p>
+    </div>
+
+    <!-- Resumen. Cada dato lleva su etiqueta: nunca un número suelto. -->
+    <div class="resumen-tarjetas" id="resumen" aria-live="polite"></div>
+
+    <div role="tablist" class="pestanas-principales" aria-label="Secciones del canal digital">
+      <button role="tab" type="button" class="pestana-principal pestana-principal--activa"
+              id="tab-control" aria-controls="panel-control" aria-selected="true">Control</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-restaurante" aria-controls="panel-restaurante" aria-selected="false">Restaurante</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-pagos" aria-controls="panel-pagos" aria-selected="false">Pagos</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-promociones" aria-controls="panel-promociones" aria-selected="false">Promociones</button>
+      <button role="tab" type="button" class="pestana-principal"
+              id="tab-clientes" aria-controls="panel-clientes" aria-selected="false">Clientes</button>
+    </div>
+
+    <!-- =================================================================
+         Control: los interruptores
+         ================================================================= -->
+    <div id="panel-control" role="tabpanel" aria-labelledby="tab-control">
+      <form id="form-control">
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera">
+            <h2>Interruptores</h2>
+          </div>
+          <div class="tarjeta__cuerpo">
+            <div class="interruptor">
+              <div class="interruptor__texto">
+                <label class="campo__etiqueta" for="i-app">Aplicación móvil</label>
+                <p class="campo__ayuda">
+                  Apagarla cierra toda la API para los clientes. La aplicación mostrará la
+                  pantalla de mantenimiento con el mensaje de abajo, no un error de red.
+                </p>
+              </div>
+              <select class="campo__control interruptor__control" id="i-app">
+                <option value="true">✓ Encendida</option>
+                <option value="false">○ Apagada</option>
+              </select>
+            </div>
+
+            <div class="interruptor">
+              <div class="interruptor__texto">
+                <label class="campo__etiqueta" for="i-reservas">Reservas de mesa</label>
+                <p class="campo__ayuda">
+                  Al apagarlas, el resto de la aplicación sigue funcionando: el cliente puede
+                  ver la carta y pedir a domicilio, pero no reservar.
+                </p>
+              </div>
+              <select class="campo__control interruptor__control" id="i-reservas">
+                <option value="true">✓ Abiertas</option>
+                <option value="false">○ Cerradas</option>
+              </select>
+            </div>
+
+            <div class="interruptor">
+              <div class="interruptor__texto">
+                <label class="campo__etiqueta" for="i-domicilios">Pedidos a domicilio</label>
+                <p class="campo__ayuda">
+                  Útil para cerrar el reparto en horas punta sin apagar la aplicación entera.
+                </p>
+              </div>
+              <select class="campo__control interruptor__control" id="i-domicilios">
+                <option value="true">✓ Abiertos</option>
+                <option value="false">○ Cerrados</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="i-mensaje">Mensaje cuando está apagada</label>
+              <textarea class="campo__control" id="i-mensaje" rows="2" maxlength="255"></textarea>
+              <p class="campo__ayuda">Es el texto exacto que lee el cliente en el móvil.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera"><h2>Reglas de reserva y domicilio</h2></div>
+          <div class="tarjeta__cuerpo form-dos-columnas">
+            <div class="campo">
+              <label class="campo__etiqueta" for="i-anticipacion">Antelación mínima (horas)</label>
+              <input class="campo__control mono" id="i-anticipacion" type="number" min="0" max="72" step="1">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="i-dias">Se puede reservar hasta (días)</label>
+              <input class="campo__control mono" id="i-dias" type="number" min="1" max="365" step="1">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="i-personas">Máximo de personas por reserva</label>
+              <input class="campo__control mono" id="i-personas" type="number" min="1" max="50" step="1">
+              <p class="campo__ayuda">Por encima, se pide llamar al restaurante.</p>
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="i-minimo">Pedido mínimo general</label>
+              <input class="campo__control mono" id="i-minimo" type="number" min="0" step="1000">
+              <p class="campo__ayuda">Solo se aplica si la zona no define el suyo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="barra-flotante">
+          <span class="texto-sm texto-tenue" id="estado-guardado"></span>
+          <button class="btn btn--primario" type="submit" id="btn-guardar-control">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- =================================================================
+         Ficha pública del restaurante
+         ================================================================= -->
+    <div id="panel-restaurante" role="tabpanel" aria-labelledby="tab-restaurante" class="oculto">
+      <form id="form-restaurante">
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera">
+            <h2>Lo que ve el cliente al abrir la aplicación</h2>
+          </div>
+          <div class="tarjeta__cuerpo">
+            <div class="campo">
+              <label class="campo__etiqueta" for="r-nombre">Nombre comercial</label>
+              <input class="campo__control" id="r-nombre" type="text" maxlength="120">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="r-descripcion">Descripción</label>
+              <textarea class="campo__control" id="r-descripcion" rows="2" maxlength="255"></textarea>
+            </div>
+            <div class="form-dos-columnas">
+              <div class="campo">
+                <label class="campo__etiqueta" for="r-direccion">Dirección</label>
+                <input class="campo__control" id="r-direccion" type="text" maxlength="200">
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="r-telefono">Teléfono</label>
+                <input class="campo__control" id="r-telefono" type="tel" maxlength="30">
+              </div>
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="r-horario">Horario de atención</label>
+              <input class="campo__control" id="r-horario" type="text" maxlength="120">
+            </div>
+            <fieldset class="zona-form__grupo">
+              <legend>Ubicación del local</legend>
+              <p class="campo__ayuda">
+                Es el centro por defecto del mapa, tanto aquí como en la aplicación.
+              </p>
+              <div class="form-dos-columnas">
+                <div class="campo">
+                  <label class="campo__etiqueta" for="r-lat">Latitud</label>
+                  <input class="campo__control mono" id="r-lat" type="number" step="0.0000001" min="-90" max="90">
+                </div>
+                <div class="campo">
+                  <label class="campo__etiqueta" for="r-lng">Longitud</label>
+                  <input class="campo__control mono" id="r-lng" type="number" step="0.0000001" min="-180" max="180">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <div class="barra-flotante">
+          <span class="texto-sm texto-tenue" id="estado-restaurante"></span>
+          <button class="btn btn--primario" type="submit" id="btn-guardar-restaurante">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- =================================================================
+         Métodos de pago
+         ================================================================= -->
+    <div id="panel-pagos" role="tabpanel" aria-labelledby="tab-pagos" class="oculto">
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h2>Cómo paga el cliente</h2></div>
+        <div class="tarjeta__cuerpo">
+          <p class="campo__ayuda" style="margin-top:0">
+            El cliente transfiere por su cuenta a la llave que publique aquí, fotografía el
+            comprobante y lo sube desde la aplicación. <strong>El pedido no entra en cocina
+            hasta que Caja verifique ese comprobante.</strong>
+          </p>
+          <p class="campo__ayuda">
+            Contra entrega no lleva comprobante: se cobra en la puerta y Caja lo acepta
+            directamente, como hasta ahora.
+          </p>
+        </div>
+      </div>
+
+      <div id="lista-metodos"></div>
+    </div>
+
+    <!-- =================================================================
+         Promociones
+         ================================================================= -->
+    <div id="panel-promociones" role="tabpanel" aria-labelledby="tab-promociones" class="oculto">
+      <div id="aviso-push"></div>
+
+      <div class="fila fila--entre" style="margin-bottom:.75rem">
+        <span class="texto-tenue texto-sm" id="contador-promos"></span>
+        <button class="btn btn--primario btn--sm" type="button" id="btn-nueva-promo">Nueva promoción</button>
+      </div>
+
+      <form id="form-promo" class="tarjeta oculto" novalidate>
+        <div class="tarjeta__cabecera"><h3 id="titulo-promo">Nueva promoción</h3></div>
+        <div class="tarjeta__cuerpo">
+          <div class="campo">
+            <label class="campo__etiqueta" for="p-titulo">
+              Título <span class="campo__requerido">*</span>
+            </label>
+            <input class="campo__control" id="p-titulo" type="text" maxlength="120">
+            <p class="campo__ayuda">Es la primera línea de la notificación en el móvil.</p>
+            <p class="campo__error" id="e-p-titulo" role="alert"></p>
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="p-cuerpo">
+              Mensaje <span class="campo__requerido">*</span>
+            </label>
+            <textarea class="campo__control" id="p-cuerpo" rows="2" maxlength="255"></textarea>
+            <p class="campo__error" id="e-p-cuerpo" role="alert"></p>
+          </div>
+          <div class="form-dos-columnas">
+            <div class="campo">
+              <label class="campo__etiqueta" for="p-desde">Vigente desde</label>
+              <input class="campo__control" id="p-desde" type="date">
+            </div>
+            <div class="campo">
+              <label class="campo__etiqueta" for="p-hasta">Vigente hasta</label>
+              <input class="campo__control" id="p-hasta" type="date">
+            </div>
+          </div>
+        </div>
+        <div class="tarjeta__cabecera zona-form__pie">
+          <button class="btn btn--plano" type="button" id="btn-cancelar-promo">Cancelar</button>
+          <button class="btn btn--primario" type="submit" id="btn-guardar-promo">Guardar</button>
+        </div>
+      </form>
+
+      <div id="lista-promos"></div>
+    </div>
+
+    <!-- =================================================================
+         Clientes registrados (solo lectura)
+         ================================================================= -->
+    <div id="panel-clientes" role="tabpanel" aria-labelledby="tab-clientes" class="oculto">
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera">
+          <h2>Clientes registrados</h2>
+          <div class="buscador">
+            <label class="solo-lectores" for="buscar-cliente">Buscar cliente</label>
+            <input class="campo__control" id="buscar-cliente" type="search"
+                   placeholder="Nombre, correo o cédula" autocomplete="off">
+          </div>
+        </div>
+        <p class="campo__ayuda" style="padding:0 1rem">
+          Solo consulta. Las cuentas las crea y las elimina el propio cliente desde la aplicación.
+        </p>
+        <div class="tabla-contenedor">
+          <table class="tabla tabla--tarjetas">
+            <thead>
+              <tr>
+                <th scope="col">Cliente</th>
+                <th scope="col">Cédula</th>
+                <th scope="col">Contacto</th>
+                <th scope="col">Pedidos</th>
+                <th scope="col">Reservas</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-clientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/admin/js/app-movil.js"></script>
+</body>
+</html>

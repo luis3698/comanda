@@ -12,7 +12,7 @@
  * atender ambas, así que se permite fijarla por querystring (?estacion=barra).
  */
 import { api } from '/comun/api.js';
-import { el, reemplazar, aviso, confirmar } from '/comun/ui.js';
+import { el, reemplazar, aviso, confirmar, campana } from '/comun/ui.js';
 import { cargarSesionActual, alPerderSesion } from '/comun/api.js';
 import { CanalTiempoReal, crearIndicadorConexion } from '/comun/ws.js';
 
@@ -88,29 +88,12 @@ $('btn-salir').addEventListener('click', async () => {
 });
 
 /* ---------------------------------------------------------------
-   Chime de comanda nueva (Web Audio, sin archivo externo)
-   FSD 4.3 vista 15: "nuevas comandas llegan con chime sonoro".
+   El chime de comanda nueva (FSD 4.3 vista 15: "nuevas comandas llegan
+   con chime sonoro") vive ahora en /comun/ui.js como campana(): Caja lo
+   necesitaba igual para las reservas y los domicilios que entran por la
+   aplicacion, y dos copias del mismo sonido habrian acabado sonando
+   distinto.
    --------------------------------------------------------------- */
-let audioCtx = null;
-function chime() {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ahora = audioCtx.currentTime;
-    // Dos tonos ascendentes, breves y claros.
-    for (const [freq, t] of [[660, 0], [880, 0.12]]) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.0001, ahora + t);
-      gain.gain.exponentialRampToValueAtTime(0.25, ahora + t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ahora + t + 0.25);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(ahora + t);
-      osc.stop(ahora + t + 0.3);
-    }
-  } catch { /* si el navegador bloquea el audio, no pasa nada grave */ }
-}
 
 /* ---------------------------------------------------------------
    Pestañas
@@ -443,7 +426,7 @@ canal.on('sesion.invalida', () => { window.location.href = '/'; });
 
 // CA-01: una comanda enviada debe aparecer aquí en < 1 s, con chime y flash.
 canal.on('orden.enviada', () => {
-  chime();
+  campana();
   if (estado.vista === 'comandas') cargarComandas();
   else cargarVistaActual();
 });

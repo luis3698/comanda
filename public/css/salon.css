@@ -230,3 +230,84 @@
   .lienzo { pointer-events: none; aspect-ratio: 4 / 3; }
   .mesa { cursor: default; }
 }
+
+/* =====================================================================
+   Selección múltiple
+
+   Arrastrar sobre una zona vacía del plano dibuja un rectángulo y
+   selecciona todas las mesas que toca. Es un atajo, no la única vía: sin
+   ratón se llega a lo mismo con Ctrl+Espacio, Ctrl+A y Supr (6.4).
+   ===================================================================== */
+
+/* El rectángulo elástico. Lo crea y lo destruye el JS durante el gesto. */
+.lienzo__seleccion {
+  position: absolute;
+  z-index: 10;
+  border: 2px dashed var(--c-primario);
+  background: rgba(15, 118, 110, .12);
+  border-radius: 2px;
+  /* No debe robar los eventos del ratón: el gesto sigue siendo del lienzo. */
+  pointer-events: none;
+}
+
+/* Mientras se arrastra, el cursor deja claro que se está seleccionando y no
+   moviendo algo. */
+.lienzo--seleccionando { cursor: crosshair; }
+.lienzo--seleccionando .mesa { pointer-events: none; }
+
+/* La mesa que edita el panel de propiedades, cuando hay varias marcadas.
+   Sin esto no se sabría cuál de las diez seleccionadas responde a los campos
+   del lateral. El punteado la distingue del resto ADEMÁS del color. */
+.mesa--principal {
+  outline: 2px dotted var(--c-primario-fuerte);
+  outline-offset: 4px;
+}
+
+/* ---------------------------------------------------------------------
+   Barra de acciones de la selección
+
+   Va encima de la de guardado, no en su lugar: son dos cosas distintas
+   (qué hago con estas mesas / guardo el plano) y pueden estar activas a
+   la vez.
+   --------------------------------------------------------------------- */
+.barra-seleccion {
+  position: sticky;
+  bottom: 0;
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: .75rem 1rem;
+  background: var(--c-primario-fuerte);
+  color: #fff;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-lg);
+}
+
+.barra-seleccion__conteo {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lo que NO se va a poder quitar, dicho antes de pulsar. */
+.barra-seleccion__aviso {
+  font-size: .875rem;
+  padding: .2rem .5rem;
+  border-radius: var(--radio-sm);
+  background: rgba(255, 255, 255, .18);
+}
+
+.barra-seleccion .btn--secundario {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .45);
+  background: transparent;
+}
+
+/* En una pantalla estrecha la barra se apila y el botón de quitar ocupa el
+   ancho: es el que hay que acertar. */
+@media (max-width: 640px) {
+  .barra-seleccion { flex-direction: column; align-items: stretch; }
+  .barra-seleccion .btn--peligro { width: 100%; }
+}

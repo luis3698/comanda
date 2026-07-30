@@ -1,0 +1,158 @@
+/* =====================================================================
+   Panel de control del canal digital — /admin/app-movil
+
+   Interruptores de la aplicación, ficha pública del restaurante,
+   promociones y listado de clientes.
+   ===================================================================== */
+
+/* Pestañas. Se repiten aquí (viven también en recetas.css) porque cada
+   vista carga solo su hoja; enlazar recetas.css traería estilos que esta
+   pantalla no usa. */
+.pestanas-principales {
+  display: flex;
+  gap: .25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--c-borde-suave);
+  overflow-x: auto;
+}
+.pestana-principal {
+  min-height: 44px;
+  padding: .6rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-texto-tenue);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pestana-principal--activa {
+  color: var(--c-primario);
+  border-bottom-color: var(--c-primario);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .pestana-principal:not(.pestana-principal--activa):hover { color: var(--c-texto); }
+}
+
+/* ---------------------------------------------------------------------
+   Resumen
+   --------------------------------------------------------------------- */
+.resumen-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.resumen-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: .85rem 1rem;
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+.resumen-tarjeta__valor {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--c-primario);
+}
+/* La etiqueta va SIEMPRE junto al número: una cifra suelta no dice nada. */
+.resumen-tarjeta__etiqueta {
+  font-size: .8rem;
+  color: var(--c-texto-suave);
+}
+.resumen-tarjeta__nota {
+  font-size: .75rem;
+  color: var(--c-texto-tenue);
+}
+
+/* Aviso de push sin configurar. Ocupa la fila entera del grid. */
+.aviso-push {
+  grid-column: 1 / -1;
+  padding: .75rem 1rem;
+  background: var(--c-alerta-bg);
+  color: var(--c-alerta);
+  border-radius: var(--radio);
+  font-size: .875rem;
+}
+
+/* ---------------------------------------------------------------------
+   Interruptores
+   --------------------------------------------------------------------- */
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--c-borde-suave);
+}
+.interruptor:last-of-type { border-bottom: none; }
+
+.interruptor__texto { flex: 1 1 auto; }
+.interruptor__texto .campo__etiqueta { margin-bottom: .15rem; }
+.interruptor__texto .campo__ayuda { margin: 0; }
+
+/* Un <select> con dos opciones y no una casilla: la casilla obliga a
+   deducir el estado de un color y una posición, mientras que el select
+   dice "✓ Encendida" / "○ Apagada" con icono y palabra
+   (ACCESIBILIDAD.md: el estado nunca se comunica solo con color). */
+.interruptor__control {
+  flex: 0 0 auto;
+  width: 11rem;
+  min-height: var(--target-tactil);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------
+   Formularios agrupados
+   --------------------------------------------------------------------- */
+.zona-form__grupo {
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio-sm);
+  padding: .6rem .75rem;
+  margin: 0 0 .75rem;
+}
+.zona-form__grupo legend {
+  padding: 0 .35rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--c-texto-suave);
+}
+.zona-form__pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  border-top: 1px solid var(--c-borde-suave);
+}
+
+/* Las dos tarjetas del panel de control se separan entre sí. */
+#panel-control .tarjeta,
+#panel-restaurante .tarjeta { margin-bottom: 1rem; }
+
+/* ---------------------------------------------------------------------
+   Promociones
+   --------------------------------------------------------------------- */
+.promo { margin-bottom: .6rem; }
+
+/* ---------------------------------------------------------------------
+   Métodos de pago
+
+   Una tarjeta-formulario por método. Contra entrega no tiene campos —no
+   hay cuenta a la que transferir— pero se pinta igual, para que se vea
+   que existe y se pueda apagar si se quiere cobrar todo por adelantado.
+   --------------------------------------------------------------------- */
+.metodo-pago { margin-bottom: 1rem; }
+
+.metodo-pago .interruptor__control { width: 13rem; }
+
+/* El pie del formulario: interruptor a la izquierda, guardar a la derecha. */
+.metodo-pago .zona-form__pie { gap: 1rem; }

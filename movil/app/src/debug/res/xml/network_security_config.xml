@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Politica de red SOLO PARA COMPILACIONES DE DEPURACION.
+
+  Este archivo sustituye al de src/main por estar en el conjunto de fuentes
+  `debug`: Gradle da prioridad al recurso del build type sobre el de main.
+
+  POR QUE PERMITE TODO EL TRAFICO SIN CIFRAR
+  El de src/main solo autoriza localhost y 10.0.2.2, asi que probar contra la
+  IP del PC en la red local obligaba a EDITAR ESE XML a mano con la IP exacta
+  (no admite rangos) y a recompilar. Era la causa mas frecuente de
+  "no hay conexion con el restaurante", y una que no da ninguna pista.
+
+  Abrirlo del todo aqui es seguro y es la practica habitual: este archivo NO
+  entra en la compilacion de release, donde sigue vigente el de src/main con
+  HTTPS obligatorio. Un APK de depuracion no se publica.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -8,7 +8,7 @@
  *  - sincronización en tiempo real
  */
 import { api } from '/comun/api.js';
-import { el, reemplazar, aviso, formatearFecha } from '/comun/ui.js';
+import { el, reemplazar, aviso, formatearFecha, formatearDinero, campana } from '/comun/ui.js';
 import { iniciarPos, turnoActivo } from './comun.js';
 
 const contexto = await iniciarPos({
@@ -27,6 +27,22 @@ const contexto = await iniciarPos({
     // El administrador renombró una zona o retiró una mesa: la columna "zona"
     // del panel se queda mintiendo hasta recargar.
     'salon.actualizado': cargar,
+
+    // Lo que entra por la aplicación móvil se avisa TAMBIÉN aquí, que es la
+    // pantalla donde el cajero pasa el día. No recarga la lista de cuentas
+    // —una reserva no cambia nada de lo que se ve— pero suena, avisa y deja el
+    // globo puesto en el nav (iniciarPos ya lo actualiza). El enlace del aviso
+    // lleva a la vista que corresponde.
+    'reserva.creada': (d) => {
+      aviso(`Nueva reserva: ${d.cliente}, ${d.personas} personas, ${formatearFecha(d.fechaHora)}. ` +
+            'Véala en la pestaña Reservas.', 'info', 12000);
+      campana();
+    },
+    'domicilio.creado': (d) => {
+      aviso(`Pedido a domicilio ${d.codigo}: ${d.cliente}, ${formatearDinero(d.total)}. ` +
+            'Véalo en la pestaña Domicilios.', 'info', 12000);
+      campana();
+    },
   },
 });
 if (!contexto) throw new Error('sin sesión');

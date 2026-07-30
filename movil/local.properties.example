@@ -1,0 +1,13 @@
+# Copie este archivo a local.properties y ajuste la ruta a su SDK de Android.
+#
+# local.properties NO se versiona: la ruta es distinta en cada maquina, y
+# Android Studio lo genera solo al abrir el proyecto por primera vez.
+#
+# Se pueden usar barras normales tambien en Windows, y asi se evita escapar
+# las contrabarras que exige el formato .properties.
+#
+#   Windows:  C:/Users/SU_USUARIO/AppData/Local/Android/Sdk
+#   macOS:    /Users/SU_USUARIO/Library/Android/sdk
+#   Linux:    /home/SU_USUARIO/Android/Sdk
+
+sdk.dir=C:/Users/SU_USUARIO/AppData/Local/Android/Sdk

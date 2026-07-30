@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>Domicilios · SIGR</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/caja.css">
+  <link rel="stylesheet" href="/css/canal-caja.css">
+</head>
+<body class="caja">
+  <header class="pos-cab">
+    <span class="pos-cab__marca"><span aria-hidden="true">💳</span> POS</span>
+    <span class="pos-cab__turno" id="estado-turno">—</span>
+    <span class="pos-cab__reloj" id="reloj-pos">--:--</span>
+    <div id="indicador-conexion"></div>
+    <nav class="pos-nav" aria-label="Navegación de caja">
+      <a class="pos-nav__item" id="nav-cuentas" href="/caja/"><span aria-hidden="true">🧾</span> <span>Cuentas</span></a>
+      <a class="pos-nav__item" id="nav-reservas" href="/caja/reservas.html"><span aria-hidden="true">📅</span> <span>Reservas</span></a>
+      <a class="pos-nav__item" id="nav-domicilios" href="/caja/domicilios.html"><span aria-hidden="true">🛵</span> <span>Domicilios</span></a>
+      <a class="pos-nav__item" id="nav-turno" href="/caja/turno.html"><span aria-hidden="true">💰</span> <span>Turno</span></a>
+    </nav>
+    <span class="texto-sm" id="nombre-cajero" style="opacity:.9"></span>
+    <button class="btn btn--secundario btn--sm" type="button" id="btn-salir-pos">Salir</button>
+  </header>
+
+  <!-- Pedidos a domicilio que llegan desde la aplicación móvil -->
+  <main class="pos-main" id="contenido">
+    <div class="herramientas">
+      <div role="tablist" class="filtros-estado" aria-label="Filtrar pedidos por estado">
+        <button role="tab" type="button" class="filtro-estado filtro-estado--activo"
+                id="f-vivos" aria-selected="true">En curso</button>
+        <button role="tab" type="button" class="filtro-estado"
+                id="f-pendiente" aria-selected="false">Sin aceptar</button>
+        <button role="tab" type="button" class="filtro-estado"
+                id="f-todos" aria-selected="false">Todos</button>
+      </div>
+      <span class="crece"></span>
+      <span class="insignia insignia--neutra" id="conteo-pedidos">—</span>
+    </div>
+
+    <p class="texto-sm texto-tenue canal-explicacion">
+      Al aceptar un pedido se abre una comanda en una posición de domicilio (D1…D30):
+      entra en cocina por el KDS y se cobra en caja como cualquier mesa.
+    </p>
+
+    <div class="canal-lista" id="lista-pedidos" aria-live="polite"></div>
+  </main>
+
+  <!-- Comprobante de pago a tamaño completo -->
+  <dialog id="modal-comprobante" aria-labelledby="titulo-comprobante">
+    <div class="modal__cabecera">
+      <h2 id="titulo-comprobante">Comprobante de pago</h2>
+    </div>
+    <div class="modal__cuerpo">
+      <p class="texto-sm" id="resumen-comprobante"></p>
+      <!-- La imagen a tamaño grande: hay que poder leer el valor y la fecha
+           de la transferencia sin forzar la vista. -->
+      <img id="img-comprobante" class="comprobante-grande" alt="Comprobante de pago enviado por el cliente">
+    </div>
+    <div class="modal__pie">
+      <button class="btn btn--plano" type="button" id="btn-cerrar-comprobante">Cerrar</button>
+      <div class="fila" style="gap:.4rem">
+        <button class="btn btn--peligro" type="button" id="btn-rechazar-pago">✕ No corresponde</button>
+        <button class="btn btn--primario" type="button" id="btn-verificar-pago">✓ Pago confirmado</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Rechazar el PAGO: el motivo es obligatorio, lo lee el cliente -->
+  <dialog id="modal-rechazar-pago" aria-labelledby="titulo-rechazar-pago">
+    <form id="form-rechazar-pago" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-rechazar-pago">Rechazar el comprobante</h2>
+      </div>
+      <div class="modal__cuerpo">
+        <p class="texto-sm" id="resumen-rechazar-pago"></p>
+        <div class="campo">
+          <label class="campo__etiqueta" for="p-motivo">
+            ¿Qué pasa con el comprobante? <span class="campo__requerido">*</span>
+          </label>
+          <textarea class="campo__control" id="p-motivo" rows="3" maxlength="255"
+                    placeholder="La captura no muestra el valor transferido…"></textarea>
+          <p class="campo__ayuda">
+            El cliente lo lee en su móvil para poder corregirlo y subir otro.
+            El pedido no se cancela.
+          </p>
+          <p class="campo__error" id="e-p-motivo" role="alert"></p>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--plano" type="button" id="btn-cerrar-rechazar-pago">Cancelar</button>
+        <button class="btn btn--peligro" type="submit">Rechazar comprobante</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Rechazar: el motivo es obligatorio, lo lee el cliente -->
+  <dialog id="modal-rechazar" aria-labelledby="titulo-rechazar">
+    <form id="form-rechazar" novalidate>
+      <div class="modal__cabecera">
+        <h2 id="titulo-rechazar">Rechazar el pedido</h2>
+      </div>
+      <div class="modal__cuerpo">
+        <p class="texto-sm" id="resumen-rechazar"></p>
+        <div class="campo">
+          <label class="campo__etiqueta" for="d-motivo">
+            Motivo <span class="campo__requerido">*</span>
+          </label>
+          <textarea class="campo__control" id="d-motivo" rows="3" maxlength="255"
+                    placeholder="No hay repartidor disponible…"></textarea>
+          <p class="campo__ayuda">El cliente lo recibe tal cual en su móvil.</p>
+          <p class="campo__error" id="e-d-motivo" role="alert"></p>
+        </div>
+      </div>
+      <div class="modal__pie">
+        <button class="btn btn--plano" type="button" id="btn-cerrar-rechazar">Cancelar</button>
+        <button class="btn btn--peligro" type="submit">Rechazar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/caja/js/domicilios.js"></script>
+</body>
+</html>

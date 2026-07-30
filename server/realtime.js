@@ -34,6 +34,17 @@ export const EVENTOS = {
   PRECUENTA_SOLICITADA: 'precuenta.solicitada',
   SALON_ACTUALIZADO: 'salon.actualizado',
   STOCK_CRITICO: 'stock.critico',
+
+  // --- Canal digital (aplicacion movil de clientes) ---
+  // Una reserva o un pedido que entra por la app tiene que aparecer en la
+  // pantalla de Caja sin que nadie recargue: es exactamente el mismo problema
+  // que resolvio PRECUENTA_SOLICITADA para el comandero, y se resuelve igual.
+  // El filtrado por permiso de publicar() hace que lleguen a Caja y al
+  // Administrador, pero no a cocina.
+  RESERVA_CREADA: 'reserva.creada',
+  RESERVA_ACTUALIZADA: 'reserva.actualizada',
+  DOMICILIO_CREADO: 'domicilio.creado',
+  DOMICILIO_ACTUALIZADO: 'domicilio.actualizado',
 };
 
 /** Clientes conectados: Set de { ws, usuario, permisos }. */

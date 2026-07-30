@@ -26,6 +26,13 @@ import rutasKds from './rutas/kds.js';
 import rutasCaja from './rutas/caja.js';
 import rutasInventario from './rutas/inventario.js';
 import rutasReportes from './rutas/reportes.js';
+// Canal digital: aplicacion movil de clientes (ver el README).
+import rutasApp from './rutas/app.js';
+import rutasReservas from './rutas/reservas.js';
+import rutasDomicilios from './rutas/domicilios.js';
+import rutasConfiguracion from './rutas/configuracion.js';
+import rutasMapa from './rutas/mapa.js';
+import { limpiarSesionesClienteVencidas } from './middleware/authCliente.js';
 import { montarRealtime } from './realtime.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -97,8 +104,31 @@ app.use('/api/v1/ordenes', rutasOrdenes);
 app.use('/api/v1/kds', rutasKds);
 app.use('/api/v1/caja', rutasCaja);
 app.use('/api/v1/inventario', rutasInventario);
-app.use('/api/v1', rutasReportes);   // /dashboard/kpis, /reportes, /auditoria
 
+// --- Canal digital ---
+// OJO AL ORDEN: estas rutas van ANTES que rutasReportes. Ese router se monta
+// en /api/v1 a secas y empieza con requiereAutenticacion, asi que TODA
+// peticion a /api/v1/* que llegue despues pasa por su guardia y muere con un
+// 401 antes de alcanzar su router. /app tiene su propia autenticacion (token
+// Bearer, no cookie) y varios endpoints publicos a proposito, de modo que
+// montarlo detras lo dejaba inservible.
+//
+// /app es la unica superficie pensada para internet abierto: token Bearer en
+// vez de cookie, ningun requierePermiso y limite por IP. Las otras tres son
+// backoffice normal, con permisos del modulo canal_digital.
+app.use('/api/v1/app', rutasApp);
+app.use('/api/v1/reservas', rutasReservas);
+app.use('/api/v1/domicilios', rutasDomicilios);
+app.use('/api/v1/configuracion', rutasConfiguracion);
+// Proxy de teselas del mapa. Sin sesion: son imagenes publicas de
+// OpenStreetMap, y exigirla romperia el mapa de la app antes del login.
+app.use('/api/v1/mapa', rutasMapa);
+
+// Sonda de salud. Va ANTES de rutasReportes por la misma razon que el canal
+// digital: ese router se monta en /api/v1 a secas y arranca con
+// requiereAutenticacion, asi que estaba devolviendo 401 y dejando la sonda
+// inservible -- justo para quien la usa, que es Docker o un monitor externo,
+// sin sesion ninguna. No expone nada: solo dice si la base responde.
 app.get('/api/v1/salud', async (_req, res) => {
   try {
     await verificarConexion();
@@ -107,6 +137,8 @@ app.get('/api/v1/salud', async (_req, res) => {
     return res.status(503).json({ estado: 'degradado', bd: 'sin conexion' });
   }
 });
+
+app.use('/api/v1', rutasReportes);   // /dashboard/kpis, /reportes, /auditoria
 
 // --- Cliente estatico ---
 app.use(express.static(PUBLIC_DIR, { index: 'index.html', extensions: ['html'] }));
@@ -143,10 +175,15 @@ async function arrancar() {
   console.log('[sigr] canal de tiempo real activo en ws://localhost:' + PORT + '/realtime');
 
   // Las sesiones vencidas se acumularian indefinidamente: se purgan cada hora.
+  // Las del personal y las de los clientes de la app viven en tablas distintas
+  // (ver el README), asi que hay que barrer las dos.
   tareaLimpieza = setInterval(() => {
     limpiarSesionesVencidas()
       .then((n) => { if (n > 0) console.log(`[sigr] ${n} sesion(es) vencida(s) purgada(s)`); })
       .catch((e) => console.error('[sigr] fallo al purgar sesiones:', e.message));
+    limpiarSesionesClienteVencidas()
+      .then((n) => { if (n > 0) console.log(`[sigr] ${n} sesion(es) de cliente purgada(s)`); })
+      .catch((e) => console.error('[sigr] fallo al purgar sesiones de cliente:', e.message));
   }, 60 * 60 * 1000);
   tareaLimpieza.unref();
 }

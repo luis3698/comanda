@@ -16,6 +16,7 @@
     "test:carga": "node tests/carga/carga.mjs",
     "test:todo": "npm test && npm run test:e2e && npm run test:seguridad",
     "hash": "node scripts/hash.js",
+    "firebase": "node scripts/firebase.js",
     "bd:ver": "node scripts/vaciar.js",
     "bd:vaciar": "node scripts/vaciar.js --si",
     "bd:reiniciar": "node scripts/vaciar.js --todo --si"

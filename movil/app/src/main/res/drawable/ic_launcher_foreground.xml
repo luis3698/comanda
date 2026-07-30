@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Icono de la app: cubiertos sobre un plato. Vectorial y dibujado a mano, sin
+  descargar ningun recurso, igual que el resto del proyecto (public/comandero
+  usa un SVG propio por la misma razon).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Plato -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0" />
+    <path
+        android:fillColor="#0f766e"
+        android:pathData="M54,30 m-13,0 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0" />
+
+    <!-- Tenedor -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,58 L38,72 L40,72 L40,58 Z M35,58 L35,66 L36.5,66 L36.5,58 Z
+                          M41.5,58 L41.5,66 L43,66 L43,58 Z
+                          M37.5,66 L40.5,66 L40.5,84 L37.5,84 Z" />
+
+    <!-- Cuchillo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,58 C71,58 72,64 70,70 L68,70 L68,84 L65.5,84 L65.5,70
+                          C64,64 65,58 68,58 Z" />
+</vector>

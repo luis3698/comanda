@@ -1,0 +1,192 @@
+/* =====================================================================
+   Configuración de cobertura de domicilios — /admin/zonas-entrega
+
+   Cada zona es un círculo sobre el mapa: centro, radio y precio de envío.
+
+   Los estilos de pestaña se repiten aquí (viven también en recetas.css)
+   porque cada vista carga solo su hoja: enlazar recetas.css desde esta
+   página traería consigo los estilos del recetario, que no pintan nada.
+   ===================================================================== */
+
+.pestanas-principales {
+  display: flex;
+  gap: .25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--c-borde-suave);
+}
+.pestana-principal {
+  min-height: 44px;
+  padding: .6rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-texto-tenue);
+  cursor: pointer;
+}
+.pestana-principal--activa {
+  color: var(--c-primario);
+  border-bottom-color: var(--c-primario);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .pestana-principal:not(.pestana-principal--activa):hover { color: var(--c-texto); }
+}
+
+/* ---------------------------------------------------------------------
+   Disposición: mapa grande a la izquierda, panel de trabajo a la derecha.
+   --------------------------------------------------------------------- */
+.zonas-diseno {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.zonas-mapa { padding: 0; overflow: hidden; }
+
+/* Altura fija y no un porcentaje del viewport: Leaflet necesita que su
+   contenedor tenga altura resuelta ANTES de crear el mapa, o calcula mal
+   cuántas teselas caben y deja huecos grises. */
+#mapa {
+  height: 620px;
+  width: 100%;
+  background: var(--c-fondo);
+}
+
+.zonas-mapa__ayuda {
+  margin: 0;
+  padding: .6rem 1rem;
+  border-top: 1px solid var(--c-borde-suave);
+}
+
+/* Leaflet trae su propio z-index alto; se baja para que los modales del
+   sistema y la pila de avisos sigan quedando por encima del mapa. */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom { z-index: 400; }
+.leaflet-container { font: inherit; }
+
+/* ---------------------------------------------------------------------
+   Panel lateral
+   --------------------------------------------------------------------- */
+.zonas-panel__acciones { margin-bottom: .75rem; }
+
+.zonas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.zona-tarjeta {
+  background: var(--c-superficie);
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio);
+  padding: .75rem;
+  box-shadow: var(--sombra);
+}
+/* Barra lateral en el color primario, no solo un tinte de fondo: se nota
+   cuál se está editando aunque el color de la zona sea claro. */
+.zona-tarjeta--activa {
+  border-color: var(--c-primario);
+  box-shadow: inset 3px 0 0 var(--c-primario), var(--sombra);
+}
+
+.zona-tarjeta__cabecera {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+
+/* Muestra de color de la zona. Es decorativa: el estado activa/inactiva se
+   comunica con la insignia de al lado, que lleva icono y texto
+   (ACCESIBILIDAD.md: nunca solo color). */
+.zona-tarjeta__color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(15, 23, 42, .25);
+  flex: 0 0 auto;
+}
+
+.zona-tarjeta__datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .15rem .6rem;
+  margin: 0 0 .6rem;
+  font-size: .85rem;
+}
+.zona-tarjeta__datos dt { color: var(--c-texto-tenue); }
+.zona-tarjeta__datos dd { margin: 0; text-align: right; }
+
+/* ---------------------------------------------------------------------
+   Formulario de la zona
+   --------------------------------------------------------------------- */
+.zona-form { margin-top: .75rem; }
+
+.zona-form__grupo {
+  border: 1px solid var(--c-borde-suave);
+  border-radius: var(--radio-sm);
+  padding: .6rem .75rem;
+  margin: 0 0 .75rem;
+}
+.zona-form__grupo legend {
+  padding: 0 .35rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--c-texto-suave);
+}
+
+/* El campo numérico del radio va junto al deslizador; se le fija el ancho
+   para que no lo aplaste. */
+.zona-form__radio { width: 7.5rem; flex: 0 0 auto; }
+
+.zona-form__color {
+  height: var(--target-tactil);
+  padding: .2rem;
+  cursor: pointer;
+}
+
+.zona-form__pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  border-top: 1px solid var(--c-borde-suave);
+}
+
+/* ---------------------------------------------------------------------
+   Comprobador de cobertura
+   --------------------------------------------------------------------- */
+.prueba-resultado { margin-top: .75rem; }
+
+.prueba-veredicto {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .75rem;
+  border-radius: var(--radio-sm);
+  margin-bottom: .75rem;
+}
+/* Los tres casos llevan icono ADEMÁS del color: sí llegamos, llegamos pero
+   falta mínimo, y no llegamos son tres respuestas distintas y el usuario
+   tiene que poder distinguirlas sin depender del color. */
+.prueba-veredicto--si      { background: var(--c-exito-bg);  color: var(--c-exito); }
+.prueba-veredicto--parcial { background: var(--c-alerta-bg); color: var(--c-alerta); }
+.prueba-veredicto--no      { background: var(--c-error-bg);  color: var(--c-error); }
+.prueba-veredicto span { font-size: 1.15rem; }
+
+/* La fila de la zona que gana el solape, resaltada en la comparativa. */
+.zona-fila--gana { background: var(--c-primario-suave); }
+.zona-fila--gana td { font-weight: 600; }
+
+/* ---------------------------------------------------------------------
+   Pantallas estrechas: el mapa pasa arriba y el panel debajo.
+   --------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .zonas-diseno { grid-template-columns: 1fr; }
+  #mapa { height: 420px; }
+}

@@ -6,3 +6,12 @@ tests
 scripts
 *.docx
 *.md
+
+# Proyecto Android. NO va en la imagen -- el Dockerfile solo copia server/ y
+# public/ -- pero sin esta linea el contexto de build se envia entero al daemon
+# de Docker, y las caches de Gradle pesan cientos de megas. Cada "docker compose
+# build" tardaria minutos en subir archivos que se van a descartar.
+movil
+
+# Cache de teselas del mapa: se rellena sola y vive en un volumen.
+.cache
