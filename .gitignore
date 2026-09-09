@@ -18,8 +18,5 @@ scripts/_*.mjs
 # siendo un proyecto completo, con sus reglas de ignorado incluidas.
 # Ver MOVIL.md, decisión 7.
 
-# Configuración/estado local de Claude Code
-.claude/
-
 # Copias de la base de datos: contienen datos reales.
 respaldos/

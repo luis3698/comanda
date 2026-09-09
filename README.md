@@ -161,7 +161,7 @@ cd movil && ./arrancar.sh --sin-compilar
 **Git Bash:**
 
 ```bash
-cd "/f/claude code/comanda"
+cd "/ruta/al/proyecto/comanda"
 export PATH="$PATH:$HOME/AppData/Local/Android/Sdk/platform-tools"
 export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
 docker compose up -d --build
@@ -175,7 +175,7 @@ adb shell am start -n co.sigr.cliente/.MainActivity
 **PowerShell** (la terminal por defecto de VS Code en Windows):
 
 ```powershell
-cd "F:\claude code\comanda"
+cd "C:utal\proyecto\comanda"
 $env:Path += ";$env:LOCALAPPDATA\Android\Sdk\platform-tools"
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 docker compose up -d --build

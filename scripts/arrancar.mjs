@@ -83,9 +83,9 @@ const necesitaShell = (cmd) => process.platform === 'win32' && cmd !== 'docker';
 /**
  * Entrecomilla un argumento para la línea de comandos de Windows.
  *
- * Hace falta porque la ruta del proyecto puede tener espacios -- este mismo se
- * desarrolla en "F:\claude code\comanda" -- y sin comillas el intérprete parte
- * la ruta por el espacio: `bash F:\claude code\...\arrancar.sh` le pasa a bash
+ * Hace falta porque la ruta del proyecto puede tener espacios -- por
+ * ejemplo "C:\mis proyectos\comanda" -- y sin comillas el intérprete parte
+ * la ruta por el espacio: `bash C:\mis proyectos\...\arrancar.sh` le pasa a bash
  * dos argumentos rotos y falla con un "no such file" que señala a un archivo
  * que sí existe.
  */
